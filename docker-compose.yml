@@ -2,10 +2,15 @@ services:
   orchestrator:
     build:
       context: ../unison-orchestrator
-    image: ghcr.io/project-unisonOS/unison-orchestrator:latest
+    image: ghcr.io/project-unisonos/unison-orchestrator:latest
     restart: unless-stopped
     ports:
       - "8080:8080"
+    environment:
+      UNISON_CONTEXT_HOST: "context"
+      UNISON_CONTEXT_PORT: "8081"
+      UNISON_STORAGE_HOST: "storage"
+      UNISON_STORAGE_PORT: "8082"
     depends_on:
       - context
       - storage
@@ -13,7 +18,7 @@ services:
   context:
     build:
       context: ../unison-context
-    image: ghcr.io/project-unisonOS/unison-context:latest
+    image: ghcr.io/project-unisonos/unison-context:latest
     restart: unless-stopped
     ports:
       - "8081:8081"
@@ -21,7 +26,7 @@ services:
   storage:
     build:
       context: ../unison-storage
-    image: ghcr.io/project-unisonOS/unison-storage:latest
+    image: ghcr.io/project-unisonos/unison-storage:latest
     restart: unless-stopped
     ports:
       - "8082:8082"
