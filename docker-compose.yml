@@ -11,9 +11,12 @@ services:
       UNISON_CONTEXT_PORT: "8081"
       UNISON_STORAGE_HOST: "storage"
       UNISON_STORAGE_PORT: "8082"
+      UNISON_POLICY_HOST: "policy"
+      UNISON_POLICY_PORT: "8083"
     depends_on:
       - context
       - storage
+      - policy
 
   context:
     build:
@@ -32,6 +35,14 @@ services:
       - "8082:8082"
     volumes:
       - unison_data:/data
+
+  policy:
+    build:
+      context: ../unison-policy
+    image: ghcr.io/project-unisonos/unison-policy:latest
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
 
 volumes:
   unison_data:
