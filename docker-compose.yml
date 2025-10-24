@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   orchestrator:
     build:
@@ -29,17 +27,6 @@ services:
       - "8082:8082"
     volumes:
       - unison_data:/data
-
-  io-speech:
-    image: ghcr.io/project-unisonOS/unison-io-speech:latest
-    restart: unless-stopped
-    # audio passthrough placeholder for later
-    # devices:
-    #   - /dev/snd:/dev/snd
-
-  io-canvas:
-    image: ghcr.io/project-unisonOS/unison-io-canvas:latest
-    restart: unless-stopped
 
 volumes:
   unison_data:
