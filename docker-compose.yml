@@ -1,7 +1,8 @@
 services:
   orchestrator:
     build:
-      context: ../unison-orchestrator
+      context: ..
+      dockerfile: unison-orchestrator/Dockerfile
     image: ghcr.io/project-unisonos/unison-orchestrator:latest
     restart: unless-stopped
     ports:
