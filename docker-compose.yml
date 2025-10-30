@@ -14,10 +14,78 @@ services:
       UNISON_STORAGE_PORT: "8082"
       UNISON_POLICY_HOST: "policy"
       UNISON_POLICY_PORT: "8083"
+      UNISON_INFERENCE_HOST: "inference"
+      UNISON_INFERENCE_PORT: "8087"
     depends_on:
       - context
       - storage
       - policy
+      - inference
+
+  inference:
+    build:
+      context: ../unison-inference
+    image: ghcr.io/project-unisonos/unison-inference:latest
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    environment:
+      UNISON_INFERENCE_PROVIDER: "ollama"
+      UNISON_INFERENCE_MODEL: "llama3.2"
+      OLLAMA_BASE_URL: "http://ollama:11434"
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    pull_policy: always
+    profiles:
+      - tools  # optional; start with: docker compose --profile tools up ollama
+
+  skill-register:
+    build:
+      context: ..
+      dockerfile: unison-devstack/Dockerfile.skill-register
+    image: ghcr.io/project-unisonos/unison-skill-register:latest
+    depends_on:
+      - orchestrator
+    command: ["python", "scripts/register_skills.py"]
+    environment:
+      UNISON_ORCH_URL: "http://orchestrator:8080"
+    profiles:
+      - tools  # optional; start with: docker compose --profile tools up skill-register
+
+  io-core:
+    build:
+      context: ../unison-io-core
+    image: ghcr.io/project-unisonos/unison-io-core:latest
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      UNISON_ORCH_HOST: "orchestrator"
+      UNISON_ORCH_PORT: "8080"
+
+  io-speech:
+    build:
+      context: ../unison-io-speech
+    image: ghcr.io/project-unisonos/unison-io-speech:latest
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+
+  io-vision:
+    build:
+      context: ../unison-io-vision
+    image: ghcr.io/project-unisonos/unison-io-vision:latest
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
 
   context:
     build:
@@ -47,3 +115,5 @@ services:
 
 volumes:
   unison_data:
+  ollama_data:
+

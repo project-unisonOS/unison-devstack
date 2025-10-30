@@ -1,0 +1,364 @@
+#!/usr/bin/env python3
+"""
+Unison CLI - Management tool for Unison services
+Provides a unified interface for managing Docker Compose deployment
+"""
+
+import os
+import sys
+import argparse
+import subprocess
+import json
+import time
+import requests
+from pathlib import Path
+from typing import Dict, List, Optional
+
+class UnisonCLI:
+    def __init__(self):
+        self.unison_home = os.environ.get('UNISON_HOME', str(Path.home() / 'unison'))
+        self.compose_file = Path(self.unison_home) / 'docker-compose.yml'
+        self.env_file = Path(self.unison_home) / '.env'
+        
+    def check_installation(self) -> bool:
+        """Check if Unison is installed."""
+        if not Path(self.unison_home).exists():
+            print(f"❌ Unison not found at {self.unison_home}")
+            print("💡 Run the installer first:")
+            print("   curl -fsSL https://raw.githubusercontent.com/project-unisonos/unison/main/unison-devstack/install.sh | bash")
+            return False
+        
+        if not self.compose_file.exists():
+            print(f"❌ docker-compose.yml not found at {self.compose_file}")
+            return False
+        
+        return True
+    
+    def run_compose(self, args: List[str]) -> subprocess.CompletedProcess:
+        """Run docker-compose command."""
+        cmd = ['docker-compose', '-f', str(self.compose_file)] + args
+        os.chdir(self.unison_home)
+        return subprocess.run(cmd, capture_output=True, text=True)
+    
+    def start(self, services: Optional[List[str]] = None):
+        """Start Unison services."""
+        print("🚀 Starting Unison services...")
+        
+        args = ['up', '-d']
+        if services:
+            args.extend(services)
+        
+        result = self.run_compose(args)
+        
+        if result.returncode == 0:
+            print("✅ Services started successfully")
+            print("💡 Run 'unison status' to check health")
+        else:
+            print("❌ Failed to start services")
+            print(result.stderr)
+    
+    def stop(self, services: Optional[List[str]] = None):
+        """Stop Unison services."""
+        print("🛑 Stopping Unison services...")
+        
+        args = ['down']
+        if services:
+            args = ['stop'] + services
+        
+        result = self.run_compose(args)
+        
+        if result.returncode == 0:
+            print("✅ Services stopped successfully")
+        else:
+            print("❌ Failed to stop services")
+            print(result.stderr)
+    
+    def restart(self, services: Optional[List[str]] = None):
+        """Restart Unison services."""
+        print("🔄 Restarting Unison services...")
+        
+        args = ['restart']
+        if services:
+            args.extend(services)
+        
+        result = self.run_compose(args)
+        
+        if result.returncode == 0:
+            print("✅ Services restarted successfully")
+        else:
+            print("❌ Failed to restart services")
+            print(result.stderr)
+    
+    def status(self):
+        """Show service status."""
+        print("📊 Unison Service Status")
+        print("=" * 50)
+        
+        # Get container status
+        result = self.run_compose(['ps', '--format', 'json'])
+        
+        if result.returncode != 0:
+            print("❌ Failed to get service status")
+            print(result.stderr)
+            return
+        
+        # Parse and display container info
+        try:
+            containers = [json.loads(line) for line in result.stdout.strip().split('\n') if line]
+            
+            for container in containers:
+                name = container.get('Name', 'unknown')
+                state = container.get('State', 'unknown')
+                status = container.get('Status', 'unknown')
+                
+                # Status icon
+                if 'running' in state.lower():
+                    icon = "🟢"
+                elif 'exited' in state.lower():
+                    icon = "🔴"
+                else:
+                    icon = "🟡"
+                
+                print(f"{icon} {name:<20} {state:<15} {status}")
+        except json.JSONDecodeError:
+            print(result.stdout)
+        
+        print("\n🏥 Health Checks")
+        print("-" * 30)
+        
+        # Check health endpoints
+        services = {
+            'orchestrator': 8080,
+            'context': 8081,
+            'storage': 8082,
+            'policy': 8083,
+            'inference': 8087,
+            'io-core': 8085,
+            'io-speech': 8084,
+            'io-vision': 8086
+        }
+        
+        for service, port in services.items():
+            try:
+                response = requests.get(f"http://localhost:{port}/health", timeout=2)
+                if response.status_code == 200:
+                    print(f"✅ {service:<15} Healthy")
+                else:
+                    print(f"⚠️  {service:<15} Unhealthy (HTTP {response.status_code})")
+            except requests.exceptions.RequestException:
+                print(f"❌ {service:<15} Unreachable")
+        
+        # Check Ollama if enabled
+        try:
+            response = requests.get("http://localhost:11434/api/tags", timeout=2)
+            if response.status_code == 200:
+                print("✅ ollama           Healthy")
+        except requests.exceptions.RequestException:
+            pass  # Ollama might not be enabled
+    
+    def logs(self, service: Optional[str] = None, follow: bool = False):
+        """Show service logs."""
+        args = ['logs']
+        if follow:
+            args.append('-f')
+        if service:
+            args.append(service)
+        
+        # Run logs command without capture to show streaming output
+        cmd = ['docker-compose', '-f', str(self.compose_file)] + args
+        os.chdir(self.unison_home)
+        os.execvp('docker-compose', cmd)
+    
+    def update(self, version: str = 'latest'):
+        """Update Unison to latest version."""
+        print(f"🔄 Updating Unison to {version}...")
+        
+        # Update images
+        result = self.run_compose(['pull'])
+        if result.returncode != 0:
+            print("❌ Failed to pull updates")
+            print(result.stderr)
+            return
+        
+        # Restart services with new images
+        result = self.run_compose(['up', '-d'])
+        if result.returncode != 0:
+            print("❌ Failed to restart services")
+            print(result.stderr)
+            return
+        
+        print("✅ Update completed successfully")
+    
+    def clean(self, volumes: bool = False):
+        """Clean up containers and optionally volumes."""
+        if volumes:
+            print("🧹 This will remove all containers AND volumes. All data will be lost!")
+        else:
+            print("🧹 This will remove all containers but preserve volumes.")
+        
+        confirm = input("Are you sure? (y/N): ").strip().lower()
+        
+        if confirm != 'y':
+            print("❌ Cleanup cancelled")
+            return
+        
+        args = ['down']
+        if volumes:
+            args.append('-v')
+        
+        result = self.run_compose(args)
+        
+        if result.returncode == 0:
+            print("✅ Cleanup completed")
+            
+            if volumes:
+                # Clean up Docker system
+                print("🧹 Cleaning up Docker system...")
+                subprocess.run(['docker', 'system', 'prune', '-f'], capture_output=True)
+        else:
+            print("❌ Failed to cleanup")
+            print(result.stderr)
+    
+    def config(self):
+        """Show configuration."""
+        print("⚙️  Unison Configuration")
+        print("=" * 30)
+        print(f"Home: {self.unison_home}")
+        print(f"Compose: {self.compose_file}")
+        print(f"Env: {self.env_file}")
+        
+        if self.env_file.exists():
+            print("\n📝 Environment Variables:")
+            with open(self.env_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        print(f"  {line}")
+    
+    def install_ollama_model(self, model: str = 'llama3.2'):
+        """Install Ollama model."""
+        print(f"📦 Installing Ollama model: {model}")
+        
+        # Check if Ollama is running
+        try:
+            response = requests.get("http://localhost:11434/api/tags", timeout=5)
+            if response.status_code != 200:
+                print("❌ Ollama is not running")
+                return
+        except requests.exceptions.RequestException:
+            print("❌ Ollama is not accessible")
+            return
+        
+        # Check if model already exists
+        models = response.json().get('models', [])
+        if any(m['name'] == model for m in models):
+            print(f"✅ Model {model} already installed")
+            return
+        
+        # Pull model
+        try:
+            result = subprocess.run([
+                'docker', 'exec', 'ollama', 'ollama', 'pull', model
+            ], capture_output=True, text=True, timeout=300)  # 5 minute timeout
+            
+            if result.returncode == 0:
+                print(f"✅ Model {model} installed successfully")
+            else:
+                print(f"❌ Failed to install model {model}")
+                print(result.stderr)
+        except subprocess.TimeoutExpired:
+            print(f"❌ Timeout installing model {model}")
+        except Exception as e:
+            print(f"❌ Error installing model: {e}")
+
+def main():
+    cli = UnisonCLI()
+    
+    parser = argparse.ArgumentParser(
+        description='Unison CLI - Management tool for Unison services',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  unison start                    # Start all services
+  unison start orchestrator       # Start specific service
+  unison logs orchestrator -f     # Follow orchestrator logs
+  unison status                   # Check service health
+  unison update v1.0.0            # Update to specific version
+  unison install-ollama-model     # Install default Ollama model
+        """
+    )
+    
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    
+    # Start command
+    start_parser = subparsers.add_parser('start', help='Start services')
+    start_parser.add_argument('services', nargs='*', help='Specific services to start')
+    
+    # Stop command
+    stop_parser = subparsers.add_parser('stop', help='Stop services')
+    stop_parser.add_argument('services', nargs='*', help='Specific services to stop')
+    
+    # Restart command
+    restart_parser = subparsers.add_parser('restart', help='Restart services')
+    restart_parser.add_argument('services', nargs='*', help='Specific services to restart')
+    
+    # Status command
+    subparsers.add_parser('status', help='Show service status')
+    
+    # Logs command
+    logs_parser = subparsers.add_parser('logs', help='Show service logs')
+    logs_parser.add_argument('service', nargs='?', help='Specific service to show logs for')
+    logs_parser.add_argument('-f', '--follow', action='store_true', help='Follow log output')
+    
+    # Update command
+    update_parser = subparsers.add_parser('update', help='Update Unison')
+    update_parser.add_argument('version', nargs='?', default='latest', help='Version to update to')
+    
+    # Clean command
+    clean_parser = subparsers.add_parser('clean', help='Clean up containers')
+    clean_parser.add_argument('--volumes', action='store_true', help='Also remove volumes (data loss!)')
+    
+    # Config command
+    subparsers.add_parser('config', help='Show configuration')
+    
+    # Install Ollama model command
+    ollama_parser = subparsers.add_parser('install-ollama-model', help='Install Ollama model')
+    ollama_parser.add_argument('model', nargs='?', default='llama3.2', help='Model to install')
+    
+    args = parser.parse_args()
+    
+    # Check installation for most commands
+    if args.command not in ['help'] and not cli.check_installation():
+        sys.exit(1)
+    
+    # Execute command
+    try:
+        if args.command == 'start':
+            cli.start(args.services)
+        elif args.command == 'stop':
+            cli.stop(args.services)
+        elif args.command == 'restart':
+            cli.restart(args.services)
+        elif args.command == 'status':
+            cli.status()
+        elif args.command == 'logs':
+            cli.logs(args.service, args.follow)
+        elif args.command == 'update':
+            cli.update(args.version)
+        elif args.command == 'clean':
+            cli.clean(args.volumes)
+        elif args.command == 'config':
+            cli.config()
+        elif args.command == 'install-ollama-model':
+            cli.install_ollama_model(args.model)
+        else:
+            parser.print_help()
+    except KeyboardInterrupt:
+        print("\n❌ Operation cancelled")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()

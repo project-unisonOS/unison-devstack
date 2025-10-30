@@ -1,0 +1,5 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY scripts/register_skills.py .
+RUN pip install requests==2.32.3
+CMD ["python", "register_skills.py"]

@@ -1,0 +1,53 @@
+name: Devstack E2E Smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'docker-compose.yml'
+      - 'scripts/e2e_smoke.py'
+      - '.github/workflows/e2e-smoke.yml'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and start devstack
+        run: |
+          docker compose up -d --build
+          # Wait briefly for services to be ready
+          sleep 5
+
+      - name: Install Python deps for script
+        run: |
+          python3 -V
+          python3 -m pip install --upgrade pip
+          python3 -m pip install requests
+
+      - name: Run E2E smoke script against localhost
+        env:
+          UNISON_ORCH_URL: http://localhost:8080
+          UNISON_CONTEXT_URL: http://localhost:8081
+          UNISON_IOCORE_URL: http://localhost:8085
+          UNISON_POLICY_URL: http://localhost:8083
+          UNISON_PERSON_ID: local-user
+        run: |
+          python3 scripts/e2e_smoke.py
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs --no-color
+
+      - name: Teardown
+        if: always()
+        run: |
+          docker compose down -v
