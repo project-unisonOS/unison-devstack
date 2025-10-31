@@ -1,0 +1,402 @@
+_format_version: "3.0"
+
+# Kong Declarative Configuration for Unison
+# Implements authentication, rate limiting, and routing
+
+services:
+# Auth Service - Public endpoints
+- name: auth-service
+  url: http://auth:8088
+  plugins:
+  - name: cors
+    config:
+      origins: ["https://localhost:3000", "https://app.unison.local"]
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      headers: ["Accept", "Content-Type", "Authorization"]
+      credentials: true
+  routes:
+  - name: auth-token
+    paths: ["/auth/token", "/token"]
+    methods: ["POST"]
+    strip_path: false
+  - name: auth-refresh
+    paths: ["/auth/refresh", "/refresh"]
+    methods: ["POST"]
+    strip_path: false
+  - name: auth-logout
+    paths: ["/auth/logout", "/logout"]
+    methods: ["POST"]
+    strip_path: false
+  - name: auth-verify
+    paths: ["/auth/verify", "/verify"]
+    methods: ["POST"]
+    strip_path: false
+  - name: auth-me
+    paths: ["/auth/me", "/me"]
+    methods: ["GET"]
+    strip_path: false
+  - name: auth-health
+    paths: ["/auth/health", "/health"]
+    methods: ["GET"]
+    strip_path: false
+
+# Orchestrator Service - Protected endpoints
+- name: orchestrator-service
+  url: http://orchestrator:8080
+  plugins:
+  - name: jwt
+    config:
+      secret_is_base64: false
+  - name: acl
+    config:
+      whitelist: ["admin", "operator", "developer", "user"]
+  - name: rate-limiting
+    config:
+      minute: 100
+      hour: 1000
+      fault_tolerant: true
+  - name: cors
+    config:
+      origins: ["https://localhost:3000", "https://app.unison.local"]
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      headers: ["Accept", "Content-Type", "Authorization"]
+      credentials: true
+  routes:
+  - name: orchestrator-events
+    paths: ["/api/event", "/event"]
+    methods: ["POST"]
+    strip_path: false
+  - name: orchestrator-skills
+    paths: ["/api/skills", "/skills"]
+    methods: ["GET", "POST"]
+    strip_path: false
+  - name: orchestrator-health
+    paths: ["/api/health", "/health"]
+    methods: ["GET"]
+    strip_path: false
+  - name: orchestrator-ready
+    paths: ["/api/ready", "/ready"]
+    methods: ["GET"]
+    strip_path: false
+  - name: orchestrator-metrics
+    paths: ["/api/metrics", "/metrics"]
+    methods: ["GET"]
+    strip_path: false
+
+# Inference Service - Protected endpoints
+- name: inference-service
+  url: http://inference:8087
+  plugins:
+  - name: jwt
+    config:
+      secret_is_base64: false
+  - name: acl
+    config:
+      whitelist: ["admin", "operator", "developer", "user"]
+  - name: rate-limiting
+    config:
+      minute: 50
+      hour: 500
+      fault_tolerant: true
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 1  # MB
+  - name: cors
+    config:
+      origins: ["https://localhost:3000", "https://app.unison.local"]
+      methods: ["GET", "POST", "OPTIONS"]
+      headers: ["Accept", "Content-Type", "Authorization"]
+      credentials: true
+  routes:
+  - name: inference-request
+    paths: ["/api/inference/request", "/inference/request"]
+    methods: ["POST"]
+    strip_path: false
+  - name: inference-health
+    paths: ["/api/inference/health", "/inference/health", "/health"]
+    methods: ["GET"]
+    strip_path: false
+  - name: inference-metrics
+    paths: ["/api/inference/metrics", "/inference/metrics", "/metrics"]
+    methods: ["GET"]
+    strip_path: false
+
+# Context Service - Protected endpoints
+- name: context-service
+  url: http://context:8081
+  plugins:
+  - name: jwt
+    config:
+      secret_is_base64: false
+  - name: acl
+    config:
+      whitelist: ["admin", "operator", "developer", "user", "service"]
+  - name: rate-limiting
+    config:
+      minute: 200
+      hour: 2000
+      fault_tolerant: true
+  - name: cors
+    config:
+      origins: ["https://localhost:3000", "https://app.unison.local"]
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      headers: ["Accept", "Content-Type", "Authorization"]
+      credentials: true
+  routes:
+  - name: context-context
+    paths: ["/api/context", "/context"]
+    methods: ["GET", "POST", "PUT", "DELETE"]
+    strip_path: false
+  - name: context-health
+    paths: ["/api/context/health", "/context/health", "/health"]
+    methods: ["GET"]
+    strip_path: false
+  - name: context-metrics
+    paths: ["/api/context/metrics", "/context/metrics", "/metrics"]
+    methods: ["GET"]
+    strip_path: false
+
+# Storage Service - Protected endpoints
+- name: storage-service
+  url: http://storage:8082
+  plugins:
+  - name: jwt
+    config:
+      secret_is_base64: false
+  - name: acl
+    config:
+      whitelist: ["admin", "operator", "developer", "user", "service"]
+  - name: rate-limiting
+    config:
+      minute: 200
+      hour: 2000
+      fault_tolerant: true
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 10  # MB
+  - name: cors
+    config:
+      origins: ["https://localhost:3000", "https://app.unison.local"]
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      headers: ["Accept", "Content-Type", "Authorization"]
+      credentials: true
+  routes:
+  - name: storage-data
+    paths: ["/api/storage", "/storage"]
+    methods: ["GET", "POST", "PUT", "DELETE"]
+    strip_path: false
+  - name: storage-health
+    paths: ["/api/storage/health", "/storage/health", "/health"]
+    methods: ["GET"]
+    strip_path: false
+  - name: storage-metrics
+    paths: ["/api/storage/metrics", "/storage/metrics", "/metrics"]
+    methods: ["GET"]
+    strip_path: false
+
+# Policy Service - Protected endpoints
+- name: policy-service
+  url: http://policy:8083
+  plugins:
+  - name: jwt
+    config:
+      secret_is_base64: false
+  - name: acl
+    config:
+      whitelist: ["admin", "operator", "developer", "user", "service"]
+  - name: rate-limiting
+    config:
+      minute: 200
+      hour: 2000
+      fault_tolerant: true
+  - name: cors
+    config:
+      origins: ["https://localhost:3000", "https://app.unison.local"]
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      headers: ["Accept", "Content-Type", "Authorization"]
+      credentials: true
+  routes:
+  - name: policy-evaluate
+    paths: ["/api/policy/evaluate", "/policy/evaluate", "/evaluate"]
+    methods: ["POST"]
+    strip_path: false
+  - name: policy-rules
+    paths: ["/api/policy/rules", "/policy/rules", "/rules"]
+    methods: ["GET", "POST"]
+    strip_path: false
+  - name: policy-health
+    paths: ["/api/policy/health", "/policy/health", "/health"]
+    methods: ["GET"]
+    strip_path: false
+  - name: policy-metrics
+    paths: ["/api/policy/metrics", "/policy/metrics", "/metrics"]
+    methods: ["GET"]
+    strip_path: false
+
+# IO Services - Protected endpoints
+- name: io-core-service
+  url: http://io-core:8085
+  plugins:
+  - name: jwt
+    config:
+      secret_is_base64: false
+  - name: acl
+    config:
+      whitelist: ["admin", "operator", "developer", "user"]
+  - name: rate-limiting
+    config:
+      minute: 100
+      hour: 1000
+      fault_tolerant: true
+  - name: cors
+    config:
+      origins: ["https://localhost:3000", "https://app.unison.local"]
+      methods: ["GET", "POST", "OPTIONS"]
+      headers: ["Accept", "Content-Type", "Authorization"]
+      credentials: true
+  routes:
+  - name: io-core-events
+    paths: ["/api/io-core", "/io-core"]
+    methods: ["GET", "POST"]
+    strip_path: false
+  - name: io-core-health
+    paths: ["/api/io-core/health", "/io-core/health", "/health"]
+    methods: ["GET"]
+    strip_path: false
+
+- name: io-speech-service
+  url: http://io-speech:8084
+  plugins:
+  - name: jwt
+    config:
+      secret_is_base64: false
+  - name: acl
+    config:
+      whitelist: ["admin", "operator", "developer", "user"]
+  - name: rate-limiting
+    config:
+      minute: 50
+      hour: 500
+      fault_tolerant: true
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 5  # MB
+  - name: cors
+    config:
+      origins: ["https://localhost:3000", "https://app.unison.local"]
+      methods: ["GET", "POST", "OPTIONS"]
+      headers: ["Accept", "Content-Type", "Authorization"]
+      credentials: true
+  routes:
+  - name: io-speech-process
+    paths: ["/api/io-speech", "/io-speech"]
+    methods: ["GET", "POST"]
+    strip_path: false
+  - name: io-speech-health
+    paths: ["/api/io-speech/health", "/io-speech/health", "/health"]
+    methods: ["GET"]
+    strip_path: false
+
+- name: io-vision-service
+  url: http://io-vision:8086
+  plugins:
+  - name: jwt
+    config:
+      secret_is_base64: false
+  - name: acl
+    config:
+      whitelist: ["admin", "operator", "developer", "user"]
+  - name: rate-limiting
+    config:
+      minute: 30
+      hour: 300
+      fault_tolerant: true
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 10  # MB
+  - name: cors
+    config:
+      origins: ["https://localhost:3000", "https://app.unison.local"]
+      methods: ["GET", "POST", "OPTIONS"]
+      headers: ["Accept", "Content-Type", "Authorization"]
+      credentials: true
+  routes:
+  - name: io-vision-process
+    paths: ["/api/io-vision", "/io-vision"]
+    methods: ["GET", "POST"]
+    strip_path: false
+  - name: io-vision-health
+    paths: ["/api/io-vision/health", "/io-vision/health", "/health"]
+    methods: ["GET"]
+    strip_path: false
+
+# Consumers and JWT Credentials
+consumers:
+- username: admin-user
+  acl_groups: ["admin"]
+  jwt_secrets:
+  - key: admin-key
+    secret: ${UNISON_JWT_SECRET}
+- username: operator-user
+  acl_groups: ["operator"]
+  jwt_secrets:
+  - key: operator-key
+    secret: ${UNISON_JWT_SECRET}
+- username: developer-user
+  acl_groups: ["developer"]
+  jwt_secrets:
+  - key: developer-key
+    secret: ${UNISON_JWT_SECRET}
+- username: regular-user
+  acl_groups: ["user"]
+  jwt_secrets:
+  - key: user-key
+    secret: ${UNISON_JWT_SECRET}
+- username: service-account
+  acl_groups: ["service"]
+  jwt_secrets:
+  - key: service-key
+    secret: ${UNISON_JWT_SECRET}
+
+# Global plugins
+plugins:
+# Enable CORS globally
+- name: cors
+  config:
+    origins: ["https://localhost:3000", "https://app.unison.local"]
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    headers: ["Accept", "Content-Type", "Authorization"]
+    credentials: true
+    preflight_continue: false
+
+# Rate limiting for anonymous requests
+- name: rate-limiting
+  config:
+    minute: 20
+    hour: 100
+    fault_tolerant: true
+
+# IP restriction (optional - uncomment for production)
+# - name: ip-restriction
+#   config:
+#     allow:
+#       - 10.0.0.0/8
+#       - 172.16.0.0/12
+#       - 192.168.0.0/16
+#       - 127.0.0.1
+
+# Security headers
+- name: response-transformer
+  config:
+    add:
+      headers:
+        - "X-Content-Type-Options:nosniff"
+        - "X-Frame-Options:DENY"
+        - "X-XSS-Protection:1; mode=block"
+        - "Referrer-Policy:strict-origin-when-cross-origin"
+        - "Content-Security-Policy:default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+
+# Request size limiting
+- name: request-size-limiting
+  config:
+    allowed_payload_size: 5  # MB (global default)
