@@ -1,4 +1,81 @@
 services:
+  # New Intent Orchestration Services
+  intent-graph:
+    build:
+      context: ../unison-intent-graph
+    image: ghcr.io/project-unisonos/unison-intent-graph:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      INTENT_GRAPH_PORT: 8080
+      INTENT_GRAPH_HOST: 0.0.0.0
+      CONTEXT_GRAPH_URL: http://context-graph:8081
+      ORCHESTRATOR_URL: http://orchestrator:8080
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - redis
+      - postgres
+
+  context-graph:
+    build:
+      context: ../unison-context-graph
+    image: ghcr.io/project-unisonos/unison-context-graph:latest
+    restart: unless-stopped
+    ports:
+      - "8091:8081"
+    environment:
+      CONTEXT_GRAPH_PORT: 8081
+      CONTEXT_GRAPH_HOST: 0.0.0.0
+      INTENT_GRAPH_URL: http://intent-graph:8080
+      EXPERIENCE_RENDERER_URL: http://experience-renderer:8082
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - redis
+      - postgres
+
+  experience-renderer:
+    build:
+      context: ../unison-experience-renderer
+    image: ghcr.io/project-unisonos/unison-experience-renderer:latest
+    restart: unless-stopped
+    ports:
+      - "8092:8082"
+    environment:
+      EXPERIENCE_RENDERER_PORT: 8082
+      EXPERIENCE_RENDERER_HOST: 0.0.0.0
+      INTENT_GRAPH_URL: http://intent-graph:8080
+      CONTEXT_GRAPH_URL: http://context-graph:8081
+      ORCHESTRATOR_URL: http://orchestrator:8080
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - intent-graph
+      - context-graph
+
+  agent-vdi:
+    build:
+      context: ../unison-agent-vdi
+    image: ghcr.io/project-unisonos/unison-agent-vdi:latest
+    restart: unless-stopped
+    ports:
+      - "8093:8083"
+    environment:
+      VDI_SERVICE_PORT: 8083
+      VDI_SERVICE_HOST: 0.0.0.0
+      INTENT_GRAPH_URL: http://intent-graph:8080
+      EXPERIENCE_RENDERER_URL: http://experience-renderer:8082
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - intent-graph
+      - experience-renderer
+    security_opt:
+      - no-new-privileges:true
+    cap_add:
+      - SYS_ADMIN
+    devices:
+      - /dev/dri:/dev/dri
+
+  # Enhanced Core Services
   orchestrator:
     build:
       context: ..
@@ -6,7 +83,7 @@ services:
     image: ghcr.io/project-unisonos/unison-orchestrator:latest
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8090:8080"
     environment:
       UNISON_CONTEXT_HOST: "context"
       UNISON_CONTEXT_PORT: "8081"
@@ -16,12 +93,77 @@ services:
       UNISON_POLICY_PORT: "8083"
       UNISON_INFERENCE_HOST: "inference"
       UNISON_INFERENCE_PORT: "8087"
+      # New intent orchestration endpoints
+      UNISON_INTENT_GRAPH_HOST: "intent-graph"
+      UNISON_INTENT_GRAPH_PORT: "8080"
+      UNISON_CONTEXT_GRAPH_HOST: "context-graph"
+      UNISON_CONTEXT_GRAPH_PORT: "8081"
+      UNISON_EXPERIENCE_RENDERER_HOST: "experience-renderer"
+      UNISON_EXPERIENCE_RENDERER_PORT: "8082"
+      # M4: Auth service configuration
+      UNISON_AUTH_HOST: "auth"
+      UNISON_AUTH_PORT: "8088"
+      UNISON_JWT_SECRET: "dev-secret-key-change-in-production-256-bits-minimum"
     depends_on:
+      - auth
       - context
       - storage
       - policy
       - inference
+      - intent-graph
+      - context-graph
+      - experience-renderer
 
+  # Infrastructure Services
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: unison
+      POSTGRES_USER: unison
+      POSTGRES_PASSWORD: unison_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # M4: Authentication Service
+  auth:
+    build:
+      context: ../unison-auth
+    image: ghcr.io/project-unisonos/unison-auth:latest
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      AUTH_PORT: 8088
+      AUTH_HOST: 0.0.0.0
+      UNISON_JWT_SECRET: "dev-secret-key-change-in-production-256-bits-minimum"
+      UNISON_ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      UNISON_REFRESH_TOKEN_EXPIRE_MINUTES: 1440
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      # Service authentication secrets
+      UNISON_ORCHESTRATOR_SERVICE_SECRET: orchestrator-secret
+      UNISON_INFERENCE_SERVICE_SECRET: inference-secret
+      UNISON_POLICY_SERVICE_SECRET: policy-secret
+      UNISON_CONTEXT_SERVICE_SECRET: context-secret
+      UNISON_STORAGE_SERVICE_SECRET: storage-secret
+    depends_on:
+      - redis
+      - postgres
+
+  # Existing Services
   inference:
     build:
       context: ../unison-inference
@@ -33,8 +175,8 @@ services:
       UNISON_INFERENCE_PROVIDER: "ollama"
       UNISON_INFERENCE_MODEL: "llama3.2"
       OLLAMA_BASE_URL: "http://ollama:11434"
-    depends_on:
-      - ollama
+    # depends_on:
+    #   - ollama  # Commented out since ollama is in tools profile
 
   ollama:
     image: ollama/ollama:latest
@@ -116,4 +258,6 @@ services:
 volumes:
   unison_data:
   ollama_data:
+  redis_data:
+  postgres_data:
 
