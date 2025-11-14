@@ -13,9 +13,19 @@ services:
       CONTEXT_GRAPH_URL: http://context-graph:8081
       ORCHESTRATOR_URL: http://orchestrator:8080
       REDIS_URL: redis://redis:6379
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
-      - redis
-      - postgres
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      inference:
+        condition: service_healthy
 
   context-graph:
     build:
@@ -30,9 +40,17 @@ services:
       INTENT_GRAPH_URL: http://intent-graph:8080
       EXPERIENCE_RENDERER_URL: http://experience-renderer:8082
       REDIS_URL: redis://redis:6379
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
-      - redis
-      - postgres
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
 
   experience-renderer:
     build:
@@ -48,9 +66,17 @@ services:
       CONTEXT_GRAPH_URL: http://context-graph:8081
       ORCHESTRATOR_URL: http://orchestrator:8080
       REDIS_URL: redis://redis:6379
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
-      - intent-graph
-      - context-graph
+      intent-graph:
+        condition: service_healthy
+      context-graph:
+        condition: service_healthy
 
   agent-vdi:
     build:
@@ -65,9 +91,17 @@ services:
       INTENT_GRAPH_URL: http://intent-graph:8080
       EXPERIENCE_RENDERER_URL: http://experience-renderer:8082
       REDIS_URL: redis://redis:6379
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
-      - intent-graph
-      - experience-renderer
+      intent-graph:
+        condition: service_healthy
+      experience-renderer:
+        condition: service_healthy
     security_opt:
       - no-new-privileges:true
     cap_add:
@@ -115,17 +149,33 @@ services:
       UNISON_CONSENT_HOST: "consent"
       UNISON_CONSENT_PORT: "7072"
       UNISON_CONSENT_SECRET: "consent-secret-key-change-in-production"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
-      - auth
-      - consent
-      - jaeger
-      - context
-      - storage
-      - policy
-      - inference
-      - intent-graph
-      - context-graph
-      - experience-renderer
+      auth:
+        condition: service_healthy
+      consent:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+      policy:
+        condition: service_healthy
+      inference:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+      context:
+        condition: service_started
+      intent-graph:
+        condition: service_started
+      context-graph:
+        condition: service_started
+      experience-renderer:
+        condition: service_started
 
   # Infrastructure Services
   redis:
@@ -136,6 +186,12 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   postgres:
     image: postgres:15-alpine
@@ -148,6 +204,12 @@ services:
       POSTGRES_PASSWORD: unison_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unison"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # M4: Authentication Service
   auth:
@@ -172,9 +234,17 @@ services:
       UNISON_POLICY_SERVICE_SECRET: policy-secret
       UNISON_CONTEXT_SERVICE_SECRET: context-secret
       UNISON_STORAGE_SERVICE_SECRET: storage-secret
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
-      - redis
-      - postgres
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
 
   # M5.2: Consent Service
   consent:
@@ -193,8 +263,15 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_DB: 1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7072/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
 
   # M5.1: Jaeger Tracing Backend
   jaeger:
@@ -220,6 +297,12 @@ services:
       UNISON_INFERENCE_PROVIDER: "ollama"
       UNISON_INFERENCE_MODEL: "llama3.2"
       OLLAMA_BASE_URL: "http://ollama:11434"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     # depends_on:
     #   - ollama  # Commented out since ollama is in tools profile
 
@@ -257,6 +340,15 @@ services:
     environment:
       UNISON_ORCH_HOST: "orchestrator"
       UNISON_ORCH_PORT: "8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      orchestrator:
+        condition: service_healthy
 
   io-speech:
     build:
@@ -265,6 +357,12 @@ services:
     restart: unless-stopped
     ports:
       - "8084:8084"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   io-vision:
     build:
@@ -273,6 +371,12 @@ services:
     restart: unless-stopped
     ports:
       - "8086:8086"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   context:
     build:
@@ -281,6 +385,15 @@ services:
     restart: unless-stopped
     ports:
       - "8081:8081"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      storage:
+        condition: service_healthy
 
   storage:
     build:
@@ -291,6 +404,17 @@ services:
       - "8082:8082"
     volumes:
       - unison_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
 
   policy:
     build:
@@ -299,6 +423,12 @@ services:
     restart: unless-stopped
     ports:
       - "8083:8083"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
 volumes:
   unison_data:

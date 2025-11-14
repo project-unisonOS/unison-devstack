@@ -5,7 +5,7 @@ This creates a valid token that matches the auth service's secret
 """
 
 import jwt
-import datetime
+from datetime import datetime, timedelta, timezone
 import sys
 
 # Must match the JWT secret in docker-compose.yml
@@ -23,8 +23,8 @@ def generate_token(username="testuser", roles=None, person_id="test-person-123")
         "person_id": person_id,
         "roles": roles,
         "username": username,
-        "iat": datetime.datetime.utcnow(),  # issued at
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),  # expires in 1 hour
+        "iat": datetime.now(timezone.utc),  # issued at
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1),  # expires in 1 hour
         "token_type": "access"
     }
     
