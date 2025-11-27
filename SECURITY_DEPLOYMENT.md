@@ -68,13 +68,13 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 
 ```bash
 # Deploy the security-hardened stack
-docker-compose -f docker-compose.security.yml up -d
+docker compose -f docker-compose.security.yml up -d
 
 # Check service status
-docker-compose -f docker-compose.security.yml ps
+docker compose -f docker-compose.security.yml ps
 
 # View logs
-docker-compose -f docker-compose.security.yml logs -f
+docker compose -f docker-compose.security.yml logs -f
 ```
 
 ## Architecture Overview
@@ -256,7 +256,7 @@ curl -X POST http://auth:8088/token \
 **Authentication Failures**
 ```bash
 # Check auth service logs
-docker-compose logs auth
+docker compose logs auth
 
 # Verify JWT secret matches
 grep UNISON_JWT_SECRET .env
@@ -274,7 +274,7 @@ docker network ls
 docker network inspect unison-devstack_internal
 
 # Test service connectivity
-docker-compose exec orchestrator curl http://auth:8088/health
+docker compose exec orchestrator curl http://auth:8088/health
 ```
 
 **Rate Limiting**
@@ -304,7 +304,7 @@ To migrate from the standard docker-compose.yml:
 
 1. **Backup existing data**
    ```bash
-   docker-compose exec storage tar -czf /backup/data.tar.gz /data
+   docker compose exec storage tar -czf /backup/data.tar.gz /data
    ```
 
 2. **Update configuration**
@@ -314,8 +314,8 @@ To migrate from the standard docker-compose.yml:
 
 3. **Deploy new services**
    ```bash
-   docker-compose down
-   docker-compose -f docker-compose.security.yml up -d
+   docker compose down
+   docker compose -f docker-compose.security.yml up -d
    ```
 
 4. **Verify functionality**
