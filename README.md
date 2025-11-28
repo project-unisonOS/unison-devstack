@@ -7,7 +7,7 @@ Docker Compose setup for core Unison services.
 ## Status
 Core DX stack (active) — canonical Docker Compose for local development and testing.
 
-See `../docs/developer-guide.md` for the end-to-end workflow.
+See `../unison-docs/dev/developer-guide.md` for the end-to-end workflow.
 
 ## Testing
 With Docker running:
