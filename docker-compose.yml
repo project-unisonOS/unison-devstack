@@ -143,6 +143,8 @@ services:
       UNISON_INFERENCE_PORT: '8087'
       UNISON_PAYMENTS_HOST: payments
       UNISON_PAYMENTS_PORT: '8089'
+      UNISON_AUTH_HOST: auth
+      UNISON_AUTH_PORT: '8088'
       UNISON_INTENT_GRAPH_HOST: intent-graph
       UNISON_INTENT_GRAPH_PORT: '8080'
       UNISON_CONTEXT_GRAPH_HOST: context-graph
@@ -444,6 +446,9 @@ services:
     ports:
     - 8089:8089
     environment:
+      UNISON_AUTH_SECRET: dev-auth-secret
+      UNISON_AUTH_ISSUER: unison-auth
+      UNISON_AUTH_AUDIENCE: unison-internal
       UNISON_REQUIRE_PAYMENT_APPROVAL: "true"
     healthcheck:
       test:
