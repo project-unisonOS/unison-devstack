@@ -22,4 +22,5 @@ curl http://localhost:8080/health   # orchestrator
 curl http://localhost:8081/health   # context
 curl http://localhost:8082/health   # storage
 curl http://localhost:8083/health   # policy
+curl http://localhost:8089/health   # payments (new standalone service)
 ```
