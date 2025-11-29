@@ -141,8 +141,6 @@ services:
       UNISON_POLICY_PORT: '8083'
       UNISON_INFERENCE_HOST: inference
       UNISON_INFERENCE_PORT: '8087'
-      UNISON_PAYMENTS_HOST: payments
-      UNISON_PAYMENTS_PORT: '8089'
       UNISON_AUTH_HOST: auth
       UNISON_AUTH_PORT: '8088'
       UNISON_INTENT_GRAPH_HOST: intent-graph
@@ -194,8 +192,6 @@ services:
       context-graph:
         condition: service_started
       experience-renderer:
-        condition: service_started
-      payments:
         condition: service_started
   redis:
     image: redis:7-alpine
@@ -439,6 +435,7 @@ services:
       storage:
         condition: service_healthy
   payments:
+    profiles: ["payments"]
     build:
       context: ..
       dockerfile: unison-payments/Dockerfile

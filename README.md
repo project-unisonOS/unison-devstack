@@ -22,5 +22,11 @@ curl http://localhost:8080/health   # orchestrator
 curl http://localhost:8081/health   # context
 curl http://localhost:8082/health   # storage
 curl http://localhost:8083/health   # policy
-curl http://localhost:8089/health   # payments (new standalone service)
+```
+
+Payments service (optional):
+```bash
+docker compose --profile payments up -d payments
+# set UNISON_PAYMENTS_HOST/PORT envs in orchestrator if you want proxying to the standalone service
+curl http://localhost:8089/health
 ```
