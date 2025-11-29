@@ -422,8 +422,6 @@ services:
       dockerfile: unison-io-vision/Dockerfile
       args:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
-      args:
-        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-io-vision:latest
     restart: unless-stopped
     ports:
