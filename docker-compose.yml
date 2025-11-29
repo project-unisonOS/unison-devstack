@@ -1,4 +1,11 @@
 services:
+  unison-common-wheel:
+    profiles: ["build-common"]
+    build:
+      context: ..
+      dockerfile: unison-common/Dockerfile.wheel
+    image: ghcr.io/project-unisonos/unison-common-wheel:latest
+    command: ["true"]
   intent-graph:
     build:
       context: ..
@@ -34,6 +41,8 @@ services:
     build:
       context: ..
       dockerfile: unison-context-graph/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-context-graph:latest
     restart: unless-stopped
     ports:
@@ -63,6 +72,8 @@ services:
     build:
       context: ..
       dockerfile: unison-experience-renderer/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-experience-renderer:latest
     restart: unless-stopped
     ports:
@@ -233,6 +244,8 @@ services:
     build:
       context: ..
       dockerfile: unison-auth/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-auth:latest
     restart: unless-stopped
     ports:
@@ -271,6 +284,8 @@ services:
     build:
       context: ..
       dockerfile: unison-consent/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-consent:latest
     restart: unless-stopped
     ports:
@@ -311,6 +326,8 @@ services:
     build:
       context: ..
       dockerfile: unison-inference/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-inference:latest
     restart: unless-stopped
     ports:
@@ -357,6 +374,8 @@ services:
     build:
       context: ..
       dockerfile: unison-io-core/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-io-core:latest
     restart: unless-stopped
     ports:
@@ -381,6 +400,8 @@ services:
     build:
       context: ..
       dockerfile: unison-io-speech/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-io-speech:latest
     restart: unless-stopped
     ports:
@@ -399,6 +420,10 @@ services:
     build:
       context: ..
       dockerfile: unison-io-vision/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-io-vision:latest
     restart: unless-stopped
     ports:
@@ -419,6 +444,7 @@ services:
       dockerfile: unison-context/Dockerfile
       args:
         REPO_PATH: unison-context
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-context:latest
     restart: unless-stopped
     ports:
@@ -441,6 +467,8 @@ services:
     build:
       context: ..
       dockerfile: unison-payments/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-payments:latest
     restart: unless-stopped
     ports:
@@ -464,6 +492,8 @@ services:
     build:
       context: ..
       dockerfile: unison-storage/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-storage:latest
     restart: unless-stopped
     ports:
@@ -489,6 +519,8 @@ services:
     build:
       context: ..
       dockerfile: unison-policy/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-policy:latest
     restart: unless-stopped
     ports:
