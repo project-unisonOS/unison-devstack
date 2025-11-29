@@ -419,6 +419,8 @@ services:
     build:
       context: ..
       dockerfile: unison-context/Dockerfile
+      args:
+        REPO_PATH: unison-context
     image: ghcr.io/project-unisonos/unison-context:latest
     restart: unless-stopped
     ports:
