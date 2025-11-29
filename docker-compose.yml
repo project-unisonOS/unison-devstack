@@ -151,8 +151,6 @@ services:
       UNISON_CONTEXT_GRAPH_PORT: '8081'
       UNISON_EXPERIENCE_RENDERER_HOST: experience-renderer
       UNISON_EXPERIENCE_RENDERER_PORT: '8082'
-      UNISON_AUTH_HOST: auth
-      UNISON_AUTH_PORT: '8088'
       UNISON_JWT_SECRET: dev-secret-key-change-in-production-256-bits-minimum
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       OTEL_SERVICE_NAME: unison-orchestrator
