@@ -62,3 +62,7 @@ docker build -f unison-common/Dockerfile.wheel -t ghcr.io/project-unisonos/uniso
 # Then build services (wheel is consumed in Dockerfiles)
 docker compose build
 ```
+
+## Docs
+
+Full docs at https://project-unisonos.github.io
