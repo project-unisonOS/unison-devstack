@@ -113,6 +113,18 @@ def main():
         fail("vision describe missing description", body)
     print(f"[ok] vision description: {description}")
 
+    # 4) Companion voice ingest (speak → companion.turn → response)
+    voice_payload = {
+        "transcript": transcript,
+        "person_id": "dev-person",
+        "session_id": "dev-session",
+        "wakeword_command": False,
+    }
+    ok3, st3, body3 = post_json(f"{ORCH}/voice/ingest", voice_payload)
+    if not ok3 or not isinstance(body3, dict) or not body3.get("ok") or "result" not in body3:
+        fail("companion voice ingest failed", body3)
+    print("[ok] companion voice ingest produced result via /voice/ingest")
+
     print("=== Multimodal I/O tests completed ===")
     return 0
 
