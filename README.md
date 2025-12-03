@@ -16,6 +16,7 @@ With Docker running:
 ```bash
 docker compose up -d --build
 python scripts/e2e_smoke.py
+python scripts/test_multimodal.py
 ```
 
 Health checks (devstack defaults):
@@ -32,6 +33,22 @@ docker compose --profile payments up -d payments
 # set UNISON_PAYMENTS_HOST/PORT envs in orchestrator if you want proxying to the standalone service
 curl http://localhost:8089/health
 ```
+
+## Wake-Word & Always-On Profile
+
+Devstack can exercise the wake-word and always-on companion path using local services only:
+
+- Set wake-word defaults and Porcupine (optional) in your shell or `.env`:
+  - `UNISON_WAKEWORD_DEFAULT=unison`
+  - `PORCUPINE_ACCESS_KEY=<your-local-access-key>`
+  - `PORCUPINE_KEYWORD_BASE64=<base64-keyword-bytes>`
+- To enable an **always-on mic** profile for the experience renderer (where browser/host permissions allow), set:
+  - `UNISON_ALWAYS_ON_MIC=true`
+- Then bring up the stack and run multimodal smoke tests:
+  - `docker compose up -d --build`
+  - `python scripts/test_multimodal.py`
+
+All wake-word detection, speech, and companion calls remain on the local machine by default; any cloud STT or model providers must be explicitly configured via the backing services and policy.
 
 ## Build speed tip: shared unison-common wheel
 

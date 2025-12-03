@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test multimodal I/O services (speech and vision) via Orchestrator.
+Test multimodal I/O services (speech and vision) via Orchestrator and renderer.
 """
 import os
 import sys
@@ -13,6 +13,8 @@ import requests
 ORCH = os.getenv("UNISON_ORCH_URL", "http://localhost:8080")
 SPEECH = os.getenv("UNISON_SPEECH_URL", "http://localhost:8084")
 VISION = os.getenv("UNISON_VISION_URL", "http://localhost:8086")
+RENDERER = os.getenv("UNISON_RENDERER_URL", "http://localhost:8092")
+
 
 def post_json(url: str, body: Dict[str, Any]) -> Tuple[bool, int, Any]:
     try:
@@ -25,6 +27,7 @@ def post_json(url: str, body: Dict[str, Any]) -> Tuple[bool, int, Any]:
     except Exception as e:
         return (False, 0, str(e))
 
+
 def get_json(url: str) -> Tuple[bool, int, Any]:
     try:
         r = requests.get(url, timeout=5)
@@ -36,11 +39,13 @@ def get_json(url: str) -> Tuple[bool, int, Any]:
     except Exception as e:
         return (False, 0, str(e))
 
+
 def fail(msg: str, payload: Any = None):
     print(f"[FAIL] {msg}")
     if payload is not None:
         print(json.dumps(payload, indent=2, ensure_ascii=False))
     sys.exit(1)
+
 
 def main():
     print("=== Test multimodal I/O ===")
@@ -68,7 +73,7 @@ def main():
         "intent": "echo",
         "payload": {"transcript": transcript},
         "auth_scope": "person.local.explicit",
-        "safety_context": {}
+        "safety_context": {},
     }
     ok2, st2, body2 = post_json(f"{ORCH}/event", env_speech)
     if not ok2 or not isinstance(body2, dict) or not body2.get("accepted"):
@@ -94,7 +99,7 @@ def main():
         "intent": "echo",
         "payload": {"image_url": image_url},
         "auth_scope": "person.local.explicit",
-        "safety_context": {}
+        "safety_context": {},
     }
     ok2, st2, body2 = post_json(f"{ORCH}/event", env_vision)
     if not ok2 or not isinstance(body2, dict) or not body2.get("accepted"):
@@ -113,7 +118,7 @@ def main():
         fail("vision describe missing description", body)
     print(f"[ok] vision description: {description}")
 
-    # 4) Companion voice ingest (speak → companion.turn → response)
+    # 4) Companion voice ingest (speak -> companion.turn -> response)
     voice_payload = {
         "transcript": transcript,
         "person_id": "dev-person",
@@ -125,8 +130,17 @@ def main():
         fail("companion voice ingest failed", body3)
     print("[ok] companion voice ingest produced result via /voice/ingest")
 
+    # 5) Renderer wake-word API (dashboard/Operating Surface)
+    ok4, st4, body4 = get_json(f"{RENDERER}/wakeword")
+    if not ok4 or not isinstance(body4, dict) or not body4.get("wakeword"):
+        fail("renderer /wakeword endpoint failed", body4)
+    wakeword = body4.get("wakeword")
+    print(f"[ok] renderer /wakeword reports active wake word: {wakeword!r}")
+
     print("=== Multimodal I/O tests completed ===")
     return 0
 
+
 if __name__ == "__main__":
     sys.exit(main())
+
