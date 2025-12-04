@@ -158,6 +158,8 @@ services:
       UNISON_POLICY_PORT: '8083'
       UNISON_INFERENCE_HOST: inference
       UNISON_INFERENCE_PORT: '8087'
+      UNISON_COMMS_HOST: comms
+      UNISON_COMMS_PORT: '8080'
       UNISON_AUTH_HOST: auth
       UNISON_AUTH_PORT: '8088'
       UNISON_INTENT_GRAPH_HOST: intent-graph
