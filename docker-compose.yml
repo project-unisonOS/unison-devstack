@@ -423,6 +423,35 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+  io-bci:
+    build:
+      context: ..
+      dockerfile: unison-io-bci/Dockerfile
+      args:
+        COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
+    image: ghcr.io/project-unisonos/unison-io-bci:latest
+    restart: unless-stopped
+    ports:
+    - 8094:8089
+    environment:
+      UNISON_ORCH_HOST: orchestrator
+      UNISON_ORCH_PORT: '8080'
+      UNISON_DEFAULT_PERSON_ID: local-user
+      UNISON_BCI_ENABLE_DEMO: "false"
+      UNISON_HAS_BCI_ADAPTER: "true"
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8089/readyz
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      orchestrator:
+        condition: service_healthy
   io-vision:
     build:
       context: ..
