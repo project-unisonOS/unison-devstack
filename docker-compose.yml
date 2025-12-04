@@ -538,6 +538,27 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+  comms:
+    build:
+      context: ..
+      dockerfile: unison-comms/Dockerfile
+    image: ghcr.io/project-unisonos/unison-comms:latest
+    restart: unless-stopped
+    ports:
+    - 8093:8080
+    environment:
+      COMMS_HOST: 0.0.0.0
+      COMMS_PORT: 8080
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8080/readyz
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 volumes:
   unison_data: null
   ollama_data: null
