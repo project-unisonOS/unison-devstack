@@ -1,0 +1,16 @@
+[Interface]
+# Replace with your generated private key (keep secret; do not commit)
+PrivateKey = <client-private-key>
+# Assign an address from your VPN network (from provider or your server)
+Address = 10.8.0.2/32
+DNS = 1.1.1.1
+
+[Peer]
+# Public key of your VPN server or provider
+PublicKey = <server-public-key>
+# Hostname:port of the WireGuard endpoint
+Endpoint = vpn.example.com:51820
+# Route all traffic through VPN; adjust if you only want specific prefixes
+AllowedIPs = 0.0.0.0/0, ::/0
+# Keepalive helps maintain NAT bindings; adjust per provider guidance
+PersistentKeepalive = 25

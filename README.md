@@ -33,6 +33,11 @@ Actuation path:
 - Orchestrator emits `proposed_action` → `unison-actuation` (see `unison-docs/dev/specs/action-envelope.md`).
 - Actuation telemetry streams to context-graph `/telemetry/actuation` and renderer `/telemetry/actuation`.
 
+## VPN for VDI (WireGuard)
+- Provide a WireGuard client config at `local/vpn/wg0.conf` (template in `local/vpn/wg0.conf.example`) or set `WIREGUARD_CONFIG_B64` with the base64 of the config. Do not commit secrets.
+- The VPN container (`network-vpn`) must become healthy for `agent-vdi` readiness; fail-closed when no handshake is present.
+- Ports: VPN status `8094` → `network-vpn:8084`; VDI API `8093` → `agent-vdi:8083` (shares VPN namespace).
+
 Payments service (optional):
 ```bash
 docker compose --profile payments up -d payments
