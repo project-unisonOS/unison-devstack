@@ -20,6 +20,9 @@ services:
       CONTEXT_GRAPH_URL: http://context-graph:8081
       ORCHESTRATOR_URL: http://orchestrator:8080
       REDIS_URL: redis://redis:6379
+      GRAPH_DB_URI: bolt://neo4j:7687
+      GRAPH_DB_USER: ${GRAPH_DB_USER:-neo4j}
+      GRAPH_DB_PASSWORD: ${GRAPH_DB_PASSWORD:-test-password}
     healthcheck:
       test:
       - CMD
@@ -53,6 +56,9 @@ services:
       INTENT_GRAPH_URL: http://intent-graph:8080
       EXPERIENCE_RENDERER_URL: http://experience-renderer:8082
       REDIS_URL: redis://redis:6379
+      GRAPH_DB_URI: bolt://neo4j:7687
+      GRAPH_DB_USER: ${GRAPH_DB_USER:-neo4j}
+      GRAPH_DB_PASSWORD: ${GRAPH_DB_PASSWORD:-test-password}
     healthcheck:
       test:
       - CMD
@@ -343,6 +349,32 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+  neo4j:
+    image: neo4j:5.25.1
+    restart: unless-stopped
+    ports:
+    - 7474:7474
+    - 7687:7687
+    environment:
+      NEO4J_AUTH: ${GRAPH_DB_USER:-neo4j}/${GRAPH_DB_PASSWORD:-test-password}
+      NEO4J_dbms_memory_heap_max__size: 512m
+      NEO4J_dbms_memory_pagecache_size: 512m
+      NEO4J_PLUGINS: '["apoc"]'
+    volumes:
+    - neo4j_data:/data
+    - neo4j_logs:/logs
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - --quiet
+      - --tries=1
+      - --spider
+      - http://localhost:7474
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
   auth:
     build:
       context: ..
@@ -691,4 +723,6 @@ volumes:
   ollama_data: null
   redis_data: null
   postgres_data: null
+  neo4j_data: null
+  neo4j_logs: null
   vdi_workspace: null
