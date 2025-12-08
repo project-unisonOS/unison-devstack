@@ -104,19 +104,60 @@ services:
         condition: service_healthy
       context-graph:
         condition: service_healthy
+  network-vpn:
+    build:
+      context: ..
+      dockerfile: unison-network-vpn/Dockerfile
+    image: ghcr.io/project-unisonos/unison-network-vpn:latest
+    restart: unless-stopped
+    ports:
+    - 8094:8084
+    - 8093:8083
+    environment:
+      VPN_HEALTH_PORT: 8084
+      WIREGUARD_INTERFACE: wg0
+      WIREGUARD_REQUIRED: "true"
+      VPN_IP_ECHO_URL: ${VPN_IP_ECHO_URL:-}
+    cap_add:
+    - NET_ADMIN
+    - SYS_MODULE
+    devices:
+    - /dev/net/tun
+    volumes:
+    - ./local/vpn:/etc/wireguard:ro
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8084/readyz
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      default:
+        aliases:
+        - agent-vdi
   agent-vdi:
     build:
       context: ..
       dockerfile: unison-agent-vdi/Dockerfile
     image: ghcr.io/project-unisonos/unison-agent-vdi:latest
     restart: unless-stopped
-    ports:
-    - 8093:8083
+    network_mode: "service:network-vpn"
+    volumes:
+    - vdi_workspace:/workspace
     environment:
       VDI_SERVICE_PORT: 8083
       VDI_SERVICE_HOST: 0.0.0.0
+      VDI_SERVICE_TOKEN: ${VDI_SERVICE_TOKEN:-}
       INTENT_GRAPH_URL: http://intent-graph:8080
       EXPERIENCE_RENDERER_URL: http://experience-renderer:8082
+      VPN_HEALTH_URL: http://localhost:8084/readyz
+      STORAGE_URL: http://storage:8082
+      STORAGE_TOKEN: ${STORAGE_TOKEN:-}
+      VDI_WORKSPACE_PATH: /workspace
       REDIS_URL: redis://redis:6379
     healthcheck:
       test:
@@ -132,6 +173,8 @@ services:
       intent-graph:
         condition: service_healthy
       experience-renderer:
+        condition: service_healthy
+      network-vpn:
         condition: service_healthy
     security_opt:
     - no-new-privileges:true
@@ -235,6 +278,8 @@ services:
       RENDERER_URL: http://experience-renderer:8082
       ACTUATION_LOGGING_ONLY: "true"
       ACTUATION_ALLOWED_RISK_LEVELS: low,medium
+      VDI_AGENT_URL: http://agent-vdi:8083
+      VDI_AGENT_TOKEN: ${VDI_SERVICE_TOKEN:-}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       OTEL_SERVICE_NAME: unison-actuation
       OTEL_SERVICE_VERSION: 0.1.0
@@ -646,3 +691,4 @@ volumes:
   ollama_data: null
   redis_data: null
   postgres_data: null
+  vdi_workspace: null
