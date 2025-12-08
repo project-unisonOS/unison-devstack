@@ -221,7 +221,7 @@ services:
       dockerfile: unison-actuation/docker/Dockerfile
       args:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
-    image: ghcr.io/project-unisonos/unison-actuation:latest
+    image: ghcr.io/project-unisonos/unison-actuation@sha256:e7d86614f8a97247831d676e744d3aee97227c9cc8915d623b97e4647586bbff
     restart: unless-stopped
     ports:
     - 8096:8086
