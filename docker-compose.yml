@@ -129,7 +129,7 @@ services:
       test:
       - CMD
       - curl
-      - -f
+      - --fail
       - http://localhost:8084/readyz
       interval: 10s
       timeout: 5s
