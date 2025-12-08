@@ -38,6 +38,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      neo4j:
+        condition: service_healthy
       inference:
         condition: service_healthy
   context-graph:
@@ -73,6 +75,8 @@ services:
       redis:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+      neo4j:
         condition: service_healthy
   experience-renderer:
     build:
@@ -611,6 +615,10 @@ services:
     restart: unless-stopped
     ports:
     - 8081:8081
+    environment:
+      UNISON_CONTEXT_DATABASE_URL: postgresql://unison:unison_password@postgres:5432/unison
+      UNISON_STORAGE_HOST: storage
+      UNISON_STORAGE_PORT: 8082
     healthcheck:
       test:
       - CMD
@@ -622,6 +630,8 @@ services:
       retries: 3
       start_period: 30s
     depends_on:
+      postgres:
+        condition: service_healthy
       storage:
         condition: service_healthy
   payments:
@@ -662,6 +672,8 @@ services:
     - 8082:8082
     volumes:
     - unison_data:/data
+    environment:
+      STORAGE_DATABASE_URL: postgresql://unison:unison_password@postgres:5432/unison
     healthcheck:
       test:
       - CMD
