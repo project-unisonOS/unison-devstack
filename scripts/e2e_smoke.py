@@ -143,6 +143,13 @@ def main():
         print(f"[ok] actuation response status: {act_res.get('status')}")
     else:
         print("[ok] actuation response (non-dict)")
+    ok, st, telem = get_json(f"{ACT}/telemetry/recent")
+    if not ok or not isinstance(telem, list):
+        fail("actuation telemetry retrieval failed", telem)
+    if telem:
+        print(f"[ok] telemetry entries: {len(telem)} (latest status={telem[-1].get('status')})")
+    else:
+        print("[warn] no telemetry entries returned")
 
     print("=== E2E smoke completed ===")
     return 0
