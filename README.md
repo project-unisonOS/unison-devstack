@@ -29,6 +29,10 @@ curl http://localhost:8096/health   # actuation (logging/mock mode)
 curl http://localhost:8093/health   # comms (stub)
 ```
 
+Actuation path:
+- Orchestrator emits `proposed_action` → `unison-actuation` (see `unison-docs/dev/specs/action-envelope.md`).
+- Actuation telemetry streams to context-graph `/telemetry/actuation` and renderer `/telemetry/actuation`.
+
 Payments service (optional):
 ```bash
 docker compose --profile payments up -d payments
