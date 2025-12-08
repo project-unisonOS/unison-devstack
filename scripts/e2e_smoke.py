@@ -12,6 +12,7 @@ ORCH = os.getenv("UNISON_ORCH_URL", "http://localhost:8080")
 CTX = os.getenv("UNISON_CONTEXT_URL", "http://localhost:8081")
 IOCORE = os.getenv("UNISON_IOCORE_URL", "http://localhost:8085")
 POLICY = os.getenv("UNISON_POLICY_URL", "http://localhost:8083")
+ACT = os.getenv("UNISON_ACTUATION_URL", "http://localhost:8096")
 
 PERSON_ID = os.getenv("UNISON_PERSON_ID", "local-user")
 
@@ -51,7 +52,13 @@ def main():
     print("=== E2E smoke: Developer Mode ===")
 
     # Health checks
-    for name, url in [("orchestrator", f"{ORCH}/health"), ("context", f"{CTX}/health"), ("policy", f"{POLICY}/health"), ("io-core", f"{IOCORE}/health")]:
+    for name, url in [
+        ("orchestrator", f"{ORCH}/health"),
+        ("context", f"{CTX}/health"),
+        ("policy", f"{POLICY}/health"),
+        ("actuation", f"{ACT}/health"),
+        ("io-core", f"{IOCORE}/health"),
+    ]:
         ok, st, body = get_json(url)
         if not ok:
             fail(f"{name} health failed ({st})", body)
@@ -114,6 +121,28 @@ def main():
     else:
         # Either allowed or denied without confirmation; still acceptable
         print("[ok] orchestrator policy path (no confirmation required)")
+
+    # 5) Proposed action -> actuation (logging/mock)
+    act_env = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "source": "e2e-script",
+        "intent": "proposed_action",
+        "payload": {
+            "person_id": PERSON_ID,
+            "target": {"device_id": "light-1", "device_class": "light"},
+            "intent": {"name": "turn_on", "parameters": {"level": 50}},
+            "risk_level": "low",
+            "telemetry_channel": {"topic": "devstack.e2e"},
+        },
+    }
+    ok, st, body = post_json(f"{ORCH}/event", act_env)
+    if not ok or not isinstance(body, dict) or not body.get("ok"):
+        fail("proposed_action flow failed", body)
+    act_res = body.get("result") or body.get("actuation_result") or body.get("body") or body.get("result", {})
+    if isinstance(act_res, dict):
+        print(f"[ok] actuation response status: {act_res.get('status')}")
+    else:
+        print("[ok] actuation response (non-dict)")
 
     print("=== E2E smoke completed ===")
     return 0
