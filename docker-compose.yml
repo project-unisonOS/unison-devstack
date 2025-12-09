@@ -570,6 +570,7 @@ services:
       UNISON_ORCH_PORT: '8080'
       UNISON_DEFAULT_PERSON_ID: local-user
       UNISON_BCI_ENABLE_DEMO: "false"
+      UNISON_BCI_SCOPE_INTENTS: ""
       UNISON_HAS_BCI_ADAPTER: "true"
     healthcheck:
       test:
