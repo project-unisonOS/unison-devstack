@@ -121,12 +121,12 @@ services:
     image: ghcr.io/project-unisonos/unison-network-vpn:latest
     restart: unless-stopped
     ports:
-    - 8094:8084
-    - 8093:8083
+    - 9084:8084
+    - 9083:8083
     environment:
       VPN_HEALTH_PORT: 8084
       WIREGUARD_INTERFACE: wg0
-      WIREGUARD_REQUIRED: "true"
+      WIREGUARD_REQUIRED: ${WIREGUARD_REQUIRED:-false}
       VPN_IP_ECHO_URL: ${VPN_IP_ECHO_URL:-}
     cap_add:
     - NET_ADMIN
@@ -274,7 +274,7 @@ services:
       dockerfile: unison-actuation/docker/Dockerfile
       args:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
-    image: ghcr.io/project-unisonos/unison-actuation@sha256:e7d86614f8a97247831d676e744d3aee97227c9cc8915d623b97e4647586bbff
+    image: ghcr.io/project-unisonos/unison-actuation:latest
     restart: unless-stopped
     ports:
     - 8096:8086
