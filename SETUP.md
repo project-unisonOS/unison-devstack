@@ -2,14 +2,14 @@
 
 ## 1. Prerequisites
 Before contributing, ensure your environment includes:
-- **Git** (latest version)  
-- **Docker Desktop** with **WSL2** backend (Windows) or native Docker (Linux/macOS)  
-- **Python 3.10+** and `pip`  
-- **Node.js 18+** (for tooling or web components)  
-- **VS Code** (recommended) with the following extensions:  
-  - *Docker*  
-  - *Python*  
-  - *YAML*  
+- **Git** (latest version)
+- **Docker Desktop** with **WSL2** backend (Windows) or native Docker (Linux/macOS)
+- **Python 3.10+** and `pip`
+- **Node.js 18+** (for tooling or web components)
+- **VS Code** (recommended) with the following extensions:
+  - *Docker*
+  - *Python*
+  - *YAML*
   - *Markdown All in One*
 
 ---
@@ -76,15 +76,15 @@ Open a pull request against the `dev` branch of the target repo.
 
 ## 5. Accessibility and Documentation
 When adding new features or docs:
-- Follow **WCAG 2.2 AA** accessibility standards.  
-- Include **alt text** for diagrams and screenshots.  
-- Keep documentation in Markdown with consistent heading levels.  
+- Follow **WCAG 2.2 AA** accessibility standards.
+- Include **alt text** for diagrams and screenshots.
+- Keep documentation in Markdown with consistent heading levels.
 - Update `user-journeys` or architectural docs if relevant.
 
 ---
 
 ## 6. Run Tests
-Each core repo will include its own test suite.  
+Each core repo will include its own test suite.
 Run with:
 ```bash
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 OTEL_SDK_DISABLED=true pytest
@@ -98,5 +98,5 @@ docker compose run orchestrator pytest
 
 ## 7. Respect Policy and Conduct
 All collaboration follows:
-- [CONTRIBUTING.md](CONTRIBUTING.md)  
+- [CONTRIBUTING.md](CONTRIBUTING.md)
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)

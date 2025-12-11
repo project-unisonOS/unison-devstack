@@ -31,7 +31,7 @@ function Write-Section {
 # Test functions
 function Test-AuthService {
     Write-Section "Testing Authentication Service..."
-    
+
     try {
         # Test health endpoint
         $response = Invoke-RestMethod -Uri "$AuthUrl/health" -Method Get -ErrorAction Stop
@@ -41,14 +41,14 @@ function Test-AuthService {
         Write-Error "Auth service health check failed"
         return $false
     }
-    
+
     try {
         # Test token endpoint with default credentials
         $tokenResponse = Invoke-RestMethod -Uri "$AuthUrl/token" -Method Post `
             -ContentType "application/x-www-form-urlencoded" `
             -Body "grant_type=password&username=admin&password=admin123" `
             -ErrorAction Stop
-        
+
         if ($tokenResponse.access_token) {
             Write-Success "Token endpoint working"
             $script:AccessToken = $tokenResponse.access_token
@@ -61,7 +61,7 @@ function Test-AuthService {
         Write-Error "Token endpoint failed"
         return $false
     }
-    
+
     try {
         # Test token verification
         $verifyBody = @{ token = $script:AccessToken } | ConvertTo-Json
@@ -69,7 +69,7 @@ function Test-AuthService {
             -ContentType "application/json" `
             -Body $verifyBody `
             -ErrorAction Stop
-        
+
         if ($verifyResponse.valid -eq $true) {
             Write-Success "Token verification working"
         } else {
@@ -81,13 +81,13 @@ function Test-AuthService {
         Write-Error "Token verification failed"
         return $false
     }
-    
+
     return $true
 }
 
 function Test-ApiGateway {
     Write-Section "Testing API Gateway (Kong)..."
-    
+
     try {
         # Test Kong admin API
         $null = Invoke-RestMethod -Uri "$KongAdminUrl/services" -Method Get -ErrorAction Stop
@@ -97,7 +97,7 @@ function Test-ApiGateway {
         Write-Error "Kong admin API not accessible"
         return $false
     }
-    
+
     try {
         # Test JWT plugin is enabled
         $plugins = Invoke-RestMethod -Uri "$KongAdminUrl/plugins" -Method Get -ErrorAction Stop
@@ -112,7 +112,7 @@ function Test-ApiGateway {
         Write-Error "Failed to check Kong plugins"
         return $false
     }
-    
+
     try {
         # Test rate limiting plugin is enabled
         $plugins = Invoke-RestMethod -Uri "$KongAdminUrl/plugins" -Method Get -ErrorAction Stop
@@ -127,7 +127,7 @@ function Test-ApiGateway {
         Write-Error "Failed to check rate limiting plugin"
         return $false
     }
-    
+
     try {
         # Test CORS plugin is enabled
         $plugins = Invoke-RestMethod -Uri "$KongAdminUrl/plugins" -Method Get -ErrorAction Stop
@@ -142,17 +142,17 @@ function Test-ApiGateway {
         Write-Error "Failed to check CORS plugin"
         return $false
     }
-    
+
     return $true
 }
 
 function Test-SecurityHeaders {
     Write-Section "Testing Security Headers..."
-    
+
     try {
         # Test headers on a protected endpoint
         $response = Invoke-WebRequest -Uri "$ApiUrl/health" -Method Get -ErrorAction Stop
-        
+
         # Check for security headers
         $securityHeaders = @(
             "X-Content-Type-Options",
@@ -161,7 +161,7 @@ function Test-SecurityHeaders {
             "Referrer-Policy",
             "Content-Security-Policy"
         )
-        
+
         foreach ($header in $securityHeaders) {
             if ($response.Headers[$header]) {
                 Write-Success "$header header present"
@@ -174,13 +174,13 @@ function Test-SecurityHeaders {
         Write-Error "Failed to retrieve security headers"
         return $false
     }
-    
+
     return $true
 }
 
 function Test-AuthenticationRequired {
     Write-Section "Testing Authentication Requirements..."
-    
+
     try {
         # Test that protected endpoints require authentication
         $body = @{ test = "data" } | ConvertTo-Json
@@ -188,7 +188,7 @@ function Test-AuthenticationRequired {
             -ContentType "application/json" `
             -Body $body `
             -ErrorAction Stop
-        
+
         Write-Warning "Protected endpoint returned $($response.StatusCode) (expected 401/403)"
     }
     catch {
@@ -198,15 +198,15 @@ function Test-AuthenticationRequired {
             Write-Error "Protected endpoint returned $($_.Exception.Response.StatusCode) (expected 401/403)"
         }
     }
-    
+
     return $true
 }
 
 function Test-RateLimiting {
     Write-Section "Testing Rate Limiting..."
-    
+
     $rateLimitHit = $false
-    
+
     # Make multiple rapid requests to test rate limiting
     for ($i = 1; $i -le 25; $i++) {
         try {
@@ -218,22 +218,22 @@ function Test-RateLimiting {
                 break
             }
         }
-        
+
         Start-Sleep -Milliseconds 100
     }
-    
+
     if ($rateLimitHit) {
         Write-Success "Rate limiting active"
     } else {
         Write-Warning "Rate limiting not triggered (may be configured with higher limits)"
     }
-    
+
     return $true
 }
 
 function Test-InputValidation {
     Write-Section "Testing Input Validation..."
-    
+
     if ($script:AccessToken) {
         try {
             $maliciousPayload = @{
@@ -242,13 +242,13 @@ function Test-InputValidation {
                 intent = "<script>alert(""xss"")</script>"
                 payload = @{ test = "data" }
             } | ConvertTo-Json -Depth 3
-            
+
             $response = Invoke-WebRequest -Uri "$ApiUrl/api/event" -Method Post `
                 -ContentType "application/json" `
                 -Body $maliciousPayload `
                 -Headers @{ Authorization = "Bearer $script:AccessToken" } `
                 -ErrorAction Stop
-            
+
             Write-Error "Malicious input accepted (returned $($response.StatusCode))"
         }
         catch {
@@ -261,13 +261,13 @@ function Test-InputValidation {
     } else {
         Write-Warning "Skipping input validation test (no auth token)"
     }
-    
+
     return $true
 }
 
 function Test-NetworkSegmentation {
     Write-Section "Testing Network Segmentation..."
-    
+
     # Test that internal services are not directly accessible from public network
     $internalServices = @(
         @{ host = "context"; port = 8081 },
@@ -275,7 +275,7 @@ function Test-NetworkSegmentation {
         @{ host = "policy"; port = 8083 },
         @{ host = "inference"; port = 8087 }
     )
-    
+
     foreach ($service in $internalServices) {
         try {
             $response = Invoke-WebRequest -Uri "http://$($service.host):$($service.port)/health" -Method Get -TimeoutSec 5 -ErrorAction Stop
@@ -285,16 +285,16 @@ function Test-NetworkSegmentation {
             Write-Success "$($service.host):$($service.port) not publicly accessible"
         }
     }
-    
+
     return $true
 }
 
 function Test-SSLConfiguration {
     Write-Section "Testing SSL Configuration..."
-    
+
     if ($ApiUrl -like "https://*") {
         $domain = ($ApiUrl -replace "https://", "") -split ":" | Select-Object -First 1
-        
+
         try {
             # Test SSL certificate
             $cert = [System.Net.ServicePointManager]::FindServicePoint($domain, $null).Certificate
@@ -307,7 +307,7 @@ function Test-SSLConfiguration {
         catch {
             Write-Error "Failed to validate SSL certificate"
         }
-        
+
         try {
             # Test TLS version
             $tcpClient = New-Object System.Net.Sockets.TcpClient
@@ -315,13 +315,13 @@ function Test-SSLConfiguration {
             $sslStream = New-Object System.Net.Security.SslStream($tcpClient.GetStream())
             $sslStream.AuthenticateAsClient($domain)
             $tlsVersion = $sslStream.SslProtocol
-            
+
             if ($tlsVersion -ge [System.Net.Security.SslProtocols]::Tls12) {
                 Write-Success "Using modern TLS version ($tlsVersion)"
             } else {
                 Write-Error "Using outdated TLS version ($tlsVersion)"
             }
-            
+
             $sslStream.Close()
             $tcpClient.Close()
         }
@@ -331,31 +331,31 @@ function Test-SSLConfiguration {
     } else {
         Write-Warning "HTTPS not configured (HTTP only)"
     }
-    
+
     return $true
 }
 
 function Test-Secrets {
     Write-Section "Checking Secrets Configuration..."
-    
+
     # Load environment file if exists
     $envFile = ".env"
     if (Test-Path $envFile) {
         $envContent = Get-Content $envFile
-        
+
         # Check if default secrets are being used
         if ($envContent -match "change-this-secret-key-in-production") {
             Write-Error "Default JWT secret detected - change for production!"
         } else {
             Write-Success "JWT secret appears to be customized"
         }
-        
+
         if ($envContent -match "change-this-redis-password-in-production") {
             Write-Error "Default Redis password detected - change for production!"
         } else {
             Write-Success "Redis password appears to be customized"
         }
-        
+
         # Check JWT secret length
         $jwtSecret = ($envContent | Where-Object { $_ -match "^UNISON_JWT_SECRET=" }) -replace "UNISON_JWT_SECRET=", ""
         if ($jwtSecret.Length -ge 64) {
@@ -366,7 +366,7 @@ function Test-Secrets {
     } else {
         Write-Warning ".env file not found - cannot check secrets configuration"
     }
-    
+
     return $true
 }
 
@@ -374,37 +374,37 @@ function Test-Secrets {
 function Main {
     Write-Section "=== Unison Security Validation ==="
     Write-Host ""
-    
+
     $failedTests = 0
-    
+
     # Run all tests
     if (-not (Test-AuthService)) { $failedTests++ }
     Write-Host ""
-    
+
     if (-not (Test-ApiGateway)) { $failedTests++ }
     Write-Host ""
-    
+
     Test-SecurityHeaders
     Write-Host ""
-    
+
     Test-AuthenticationRequired
     Write-Host ""
-    
+
     Test-RateLimiting
     Write-Host ""
-    
+
     Test-InputValidation
     Write-Host ""
-    
+
     Test-NetworkSegmentation
     Write-Host ""
-    
+
     Test-SSLConfiguration
     Write-Host ""
-    
+
     Test-Secrets
     Write-Host ""
-    
+
     # Summary
     if ($failedTests -eq 0) {
         Write-Success "=== All Critical Tests Passed ==="
@@ -414,7 +414,7 @@ function Main {
         Write-Error "Please address the security issues above before production deployment."
         exit 1
     }
-    
+
     Write-Host ""
     Write-Section "=== Additional Recommendations ==="
     Write-Host "• Ensure all default passwords are changed"

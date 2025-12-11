@@ -8,7 +8,6 @@ import os
 import sys
 import time
 import httpx
-import json
 import logging
 from typing import Dict, Any
 
@@ -23,7 +22,7 @@ ORCH_BASE_URL = f"http://{ORCH_HOST}:{ORCH_PORT}"
 def wait_for_service(url: str, max_attempts: int = 30, delay: float = 2.0) -> bool:
     """Wait for a service to become healthy."""
     logger.info(f"Waiting for service at {url}...")
-    
+
     for attempt in range(max_attempts):
         try:
             with httpx.Client(timeout=5.0) as client:
@@ -33,29 +32,29 @@ def wait_for_service(url: str, max_attempts: int = 30, delay: float = 2.0) -> bo
                 return True
         except Exception as e:
             logger.debug(f"Attempt {attempt + 1}: Service not ready - {e}")
-        
+
         if attempt < max_attempts - 1:
             time.sleep(delay)
-    
+
     logger.error(f"Service at {url} did not become ready in time")
     return False
 
 def test_orchestrator_ready() -> bool:
     """Test if Orchestrator and all dependencies are ready."""
     logger.info("Testing Orchestrator readiness...")
-    
+
     try:
         with httpx.Client(timeout=10.0) as client:
             response = client.get(f"{ORCH_BASE_URL}/ready")
-        
+
         if response.status_code == 200:
             ready_data = response.json()
             logger.info(f"Orchestrator ready status: {ready_data}")
-            
+
             # Check all dependencies
             deps = ready_data.get("deps", {})
             all_ok = ready_data.get("ready", False)
-            
+
             logger.info(f"Dependencies: {deps}")
             return all_ok
         else:
@@ -68,7 +67,7 @@ def test_orchestrator_ready() -> bool:
 def test_inference_intent(intent: str, prompt: str, test_name: str) -> Dict[str, Any]:
     """Test an inference intent through the Orchestrator."""
     logger.info(f"Testing {test_name}: {intent}")
-    
+
     envelope = {
         "intent": intent,
         "source": "test-script",
@@ -81,7 +80,7 @@ def test_inference_intent(intent: str, prompt: str, test_name: str) -> Dict[str,
             "data_classification": "public"
         }
     }
-    
+
     try:
         with httpx.Client(timeout=60.0) as client:  # Longer timeout for inference
             response = client.post(
@@ -89,7 +88,7 @@ def test_inference_intent(intent: str, prompt: str, test_name: str) -> Dict[str,
                 json=envelope,
                 headers={"Content-Type": "application/json"}
             )
-        
+
         if response.status_code == 200:
             result = response.json()
             logger.info(f"{test_name} successful!")
@@ -105,17 +104,17 @@ def test_inference_intent(intent: str, prompt: str, test_name: str) -> Dict[str,
 def main():
     """Run all inference tests."""
     logger.info("Starting Phase 9 inference integration tests...")
-    
+
     # Wait for Orchestrator
     if not wait_for_service(ORCH_BASE_URL):
         logger.error("Orchestrator not available")
         sys.exit(1)
-    
+
     # Check readiness
     if not test_orchestrator_ready():
         logger.error("Orchestrator dependencies not ready")
         sys.exit(1)
-    
+
     # Test cases
     test_cases = [
         {
@@ -139,7 +138,7 @@ def main():
             "name": "Idea Generation"
         }
     ]
-    
+
     results = []
     for test_case in test_cases:
         result = test_inference_intent(
@@ -152,21 +151,21 @@ def main():
             "intent": test_case["intent"],
             "success": result["success"]
         })
-        
+
         # Small delay between tests
         time.sleep(2)
-    
+
     # Summary
     logger.info("\n=== Test Summary ===")
     passed = sum(1 for r in results if r["success"])
     total = len(results)
-    
+
     for result in results:
         status = "✓ PASS" if result["success"] else "✗ FAIL"
         logger.info(f"{status}: {result['name']} ({result['intent']})")
-    
+
     logger.info(f"\nPassed: {passed}/{total}")
-    
+
     if passed == total:
         logger.info("🎉 All inference tests passed! Phase 9 integration is working.")
         return 0

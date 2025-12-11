@@ -6,7 +6,7 @@ Tries to detect real hardware via lightweight system calls; falls back to stubs.
 
 import json
 import socket
-import subprocess
+import subprocess  # nosec B404
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
@@ -14,7 +14,7 @@ from typing import Any, Dict, List
 
 def _run(cmd: List[str]) -> str:
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=2, check=False)
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=2, check=False)  # nosec B603
         return res.stdout.strip()
     except Exception:
         return ""

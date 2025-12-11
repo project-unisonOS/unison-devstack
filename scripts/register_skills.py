@@ -5,7 +5,6 @@ Run after devstack is up to enable summarize.doc, context.get, and storage.put.
 """
 import os
 import sys
-import json
 import time
 from typing import Any, Dict, Tuple
 

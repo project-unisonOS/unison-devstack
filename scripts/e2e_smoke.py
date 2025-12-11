@@ -3,7 +3,6 @@ import os
 import sys
 import json
 import time
-import uuid
 from typing import Any, Dict, Tuple
 
 import requests

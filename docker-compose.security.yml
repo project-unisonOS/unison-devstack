@@ -11,7 +11,7 @@ networks:
       driver: default
       config:
         - subnet: 172.20.0.0/24
-  
+
   # Internal network - services that communicate with each other
   internal:
     driver: bridge
@@ -20,7 +20,7 @@ networks:
       driver: default
       config:
         - subnet: 172.21.0.0/24
-  
+
   # Data network - storage and database services
   data:
     driver: bridge
@@ -29,7 +29,7 @@ networks:
       driver: default
       config:
         - subnet: 172.22.0.0/24
-  
+
   # Auth network - authentication and Redis
   auth:
     driver: bridge
@@ -38,7 +38,7 @@ networks:
       driver: default
       config:
         - subnet: 172.23.0.0/24
-  
+
   # Inference network - AI/ML services
   inference:
     driver: bridge
