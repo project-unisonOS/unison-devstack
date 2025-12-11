@@ -4,7 +4,7 @@ opentelemetry-exporter-otlp==1.21.0
 opentelemetry-exporter-otlp-proto-grpc==1.21.0
 opentelemetry-exporter-jaeger==1.21.0
 opentelemetry-propagator-b3==1.21.0
-opentelemetry-propagator-jaeger==1.21.0
+opentelemetry-propagator-jaeger==1.39.1
 opentelemetry-semantic-conventions==0.42b0
 opentelemetry-instrumentation==0.42b0
 protobuf==4.25.3
