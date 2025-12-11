@@ -11,6 +11,10 @@ Core DX stack (active) — canonical Docker Compose for local development and te
 
 See `../unison-docs/dev/developer-guide.md` for the end-to-end workflow.
 
+## Role in UnisonOS
+- Provides the single Compose stack for local development and integration testing.
+- Source of truth for service wiring, ports, and default environment variables in dev.
+
 ## Testing
 With Docker running:
 ```bash
@@ -77,3 +81,5 @@ docker compose build
 ## Docs
 
 Full docs at https://project-unisonos.github.io
+- Repo roles: `unison-docs/dev/unison-repo-roles.md`
+- Platform roadmap: `unison-docs/roadmap/deployment-platform-roadmap.md`
