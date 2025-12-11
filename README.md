@@ -14,6 +14,7 @@ See `../unison-docs/dev/developer-guide.md` for the end-to-end workflow.
 ## Role in UnisonOS
 - Provides the single Compose stack for local development and integration testing.
 - Source of truth for service wiring, ports, and default environment variables in dev.
+- Secrets: use `.env.example` as a template only. Source real secrets from Vault/Secret Manager (or Doppler/1Password CLI), export in your shell, then run compose. Do not commit `.env` files.
 
 ## Testing
 With Docker running:
