@@ -198,6 +198,8 @@ services:
       UNISON_CORS_ORIGINS: "https://localhost:3000,https://app.unison.local"
       UNISON_SERVICE_SECRET: ${UNISON_ORCHESTRATOR_SERVICE_SECRET:-orchestrator-secret}
       UNISON_ALLOW_HS256_SERVICE_TOKENS: ${UNISON_ALLOW_HS256_SERVICE_TOKENS:-true}
+      UNISON_STREAM_ROM: ${UNISON_STREAM_ROM:-true}
+      UNISON_CONTEXT_SNAPSHOT_CACHE_TTL_MS: ${UNISON_CONTEXT_SNAPSHOT_CACHE_TTL_MS:-2000}
     depends_on:
       auth:
         condition: service_healthy

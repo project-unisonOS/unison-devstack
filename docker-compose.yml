@@ -238,6 +238,8 @@ services:
       UNISON_CONSENT_PORT: '7072'
       UNISON_CONSENT_SECRET: consent-secret-key-change-in-production
       DISABLE_AUTH_FOR_TESTS: "true"
+      UNISON_STREAM_ROM: "true"
+      UNISON_CONTEXT_SNAPSHOT_CACHE_TTL_MS: "2000"
     healthcheck:
       test:
       - CMD
