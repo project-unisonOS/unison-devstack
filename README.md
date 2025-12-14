@@ -19,7 +19,7 @@ See `../unison-docs/dev/developer-guide.md` for the end-to-end workflow.
 ## Testing
 With Docker running:
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.ports.yml up -d --build
 python scripts/e2e_smoke.py
 python scripts/test_multimodal.py
 ```
@@ -31,7 +31,7 @@ curl http://localhost:8081/health   # context
 curl http://localhost:8082/health   # storage
 curl http://localhost:8083/health   # policy
 curl http://localhost:8096/health   # actuation (logging/mock mode)
-curl http://localhost:8093/health   # comms (stub)
+curl http://localhost:8095/health   # comms (stub)
 ```
 
 Actuation path:
@@ -45,7 +45,7 @@ Actuation path:
 
 Payments service (optional):
 ```bash
-docker compose --profile payments up -d payments
+docker compose -f docker-compose.yml -f docker-compose.ports.yml --profile payments up -d payments
 # set UNISON_PAYMENTS_HOST/PORT envs in orchestrator if you want proxying to the standalone service
 curl http://localhost:8089/health
 ```
@@ -61,7 +61,7 @@ Devstack can exercise the wake-word and always-on companion path using local ser
 - To enable an **always-on mic** profile for the experience renderer (where browser/host permissions allow), set:
   - `UNISON_ALWAYS_ON_MIC=true`
 - Then bring up the stack and run multimodal smoke tests:
-  - `docker compose up -d --build`
+  - `docker compose -f docker-compose.yml -f docker-compose.ports.yml up -d --build`
   - `python scripts/test_multimodal.py`
 
 All wake-word detection, speech, and companion calls remain on the local machine by default; any cloud STT or model providers must be explicitly configured via the backing services and policy.

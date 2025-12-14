@@ -1,8 +1,8 @@
-# Security-Hardened Deployment Guide
+# Security Overlay (Devstack)
 
 ## Overview
 
-This guide covers deploying the Unison platform with comprehensive security hardening including authentication, network segmentation, API gateway, and enhanced input validation.
+This guide covers running the canonical devstack with a security overlay (`docker-compose.security.yml`) that focuses on network segmentation and minimizing host port exposure.
 
 ## Prerequisites
 
@@ -64,39 +64,32 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
 ```
 
-### 3. Deploy with Security Configuration
+### 3. Deploy with Security Overlay
 
 ```bash
-# Deploy the security-hardened stack
-docker compose -f docker-compose.security.yml up -d
+# Deploy the canonical devstack with the security overlay applied (overlay model).
+# NOTE: do not include `docker-compose.ports.yml` (that file is for local host port publishing).
+docker compose -p unison-devstack -f docker-compose.yml -f docker-compose.security.yml up -d --wait --wait-timeout 300
 
 # Check service status
-docker compose -f docker-compose.security.yml ps
+docker compose -p unison-devstack -f docker-compose.yml -f docker-compose.security.yml ps
 
 # View logs
-docker compose -f docker-compose.security.yml logs -f
+docker compose -p unison-devstack -f docker-compose.yml -f docker-compose.security.yml logs -f
 ```
 
 ## Architecture Overview
 
 ### Network Segmentation
 
-The security-hardened deployment uses multiple isolated networks:
+The overlay creates multiple isolated networks and attaches services only where needed:
 
-- **Public Network** (172.20.0.0/24): Only API gateway and load balancer
-- **Internal Network** (172.21.0.0/24): Service-to-service communication
-- **Data Network** (172.22.0.0/24): Storage and database services
-- **Auth Network** (172.23.0.0/24): Authentication and Redis
-- **Inference Network** (172.24.0.0/24): AI/ML services
+- `public` — edge-facing services (no host ports published by default in the overlay)
+- `internal` — service-to-service application traffic
+- `data` — databases/cache + services that must connect to them
+- `auth` — auth/consent plane + callers that must reach them
 
-### API Gateway (Kong)
-
-Kong serves as the single entry point, providing:
-- JWT authentication
-- Rate limiting
-- CORS handling
-- Request/response transformation
-- Security headers
+If you need a full API-gateway/edge deployment (Kong, TLS termination, etc.), treat that as a separate “deployment stack” and keep it out of the devstack overlay to avoid drift.
 
 ### Authentication Flow
 
