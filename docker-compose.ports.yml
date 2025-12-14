@@ -1,0 +1,81 @@
+name: unison-devstack
+
+# Host port publishing for local dev.
+# Use with:
+#   docker compose -p unison-devstack -f docker-compose.yml -f docker-compose.ports.yml up -d
+services:
+  actuation:
+    ports:
+    - 8096:8086
+  auth:
+    ports:
+    - 8088:8088
+  comms:
+    ports:
+    - 8095:8080
+  consent:
+    ports:
+    - 7072:7072
+  context:
+    ports:
+    - 8081:8081
+  context-graph:
+    ports:
+    - 8091:8081
+  experience-renderer:
+    ports:
+    - 8092:8082
+  inference:
+    ports:
+    - 8087:8087
+  intent-graph:
+    ports:
+    - 8089:8080
+  io-bci:
+    ports:
+    - 8097:8089
+  io-core:
+    ports:
+    - 8085:8085
+  io-speech:
+    ports:
+    - 8084:8084
+  io-vision:
+    ports:
+    - 8086:8086
+  jaeger:
+    ports:
+    - 16686:16686
+    - 4317:4317
+    - 4318:4318
+    - 14250:14250
+  neo4j:
+    ports:
+    - 7474:7474
+    - 7687:7687
+  network-vpn:
+    ports:
+    - 8094:8084
+    - 8093:8083
+  ollama:
+    ports:
+    - 11434:11434
+  orchestrator:
+    ports:
+    - 8080:8080
+  payments:
+    ports:
+    - 8089:8089
+  policy:
+    ports:
+    - 8083:8083
+  postgres:
+    ports:
+    - 5432:5432
+  redis:
+    ports:
+    - 6379:6379
+  storage:
+    ports:
+    - 8082:8082
+

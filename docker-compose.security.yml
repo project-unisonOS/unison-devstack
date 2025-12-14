@@ -1,537 +1,115 @@
-version: '3.8'
+name: unison-devstack
 
-# Security-hardened Docker Compose configuration
-# Implements network segmentation, authentication, and security controls
-
-networks:
-  # Public network - only API gateway and load balancer
-  public:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.20.0.0/24
-
-  # Internal network - services that communicate with each other
-  internal:
-    driver: bridge
-    internal: true
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.21.0.0/24
-
-  # Data network - storage and database services
-  data:
-    driver: bridge
-    internal: true
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.22.0.0/24
-
-  # Auth network - authentication and Redis
-  auth:
-    driver: bridge
-    internal: true
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.23.0.0/24
-
-  # Inference network - AI/ML services
-  inference:
-    driver: bridge
-    internal: true
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.24.0.0/24
-
-volumes:
-  unison_data:
-    driver: local
-  redis_data:
-    driver: local
-  ollama_data:
-    driver: local
+# Security overlay for the canonical devstack compose.
+# Use with:
+#   docker compose -p unison-devstack -f docker-compose.yml -f docker-compose.security.yml up -d
+#
+# Goals:
+# - Segment networks (public/internal/data/auth)
+# - Keep services off the host network (do NOT include docker-compose.ports.yml)
+# - Apply basic hardening knobs without breaking local dev ergonomics
 
 services:
-  # API Gateway - Public facing entry point
-  api-gateway:
-    image: kong:3.4
-    container_name: unison-api-gateway
-    networks:
-      public:
-        ipv4_address: 172.20.0.10
-      internal:
-        ipv4_address: 172.21.0.10
-      auth:
-        ipv4_address: 172.23.0.10
-    ports:
-      - "80:8000"
-      - "443:8443"
-      - "8001:8001"  # Admin API (internal only)
-      - "8444:8444"  # Admin API SSL (internal only)
-    environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
-      KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
-      KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
-      KONG_ADMIN_GUI_URL: "http://localhost:8002"
-      KONG_SSL: "on"
-      KONG_SSL_CERT: /kong/ssl/kong.crt
-      KONG_SSL_CERT_KEY: /kong/ssl/kong.key
-    volumes:
-      - ./kong.yml:/kong/declarative/kong.yml:ro
-      - ./ssl:/kong/ssl:ro
-      - kong_data:/kong/data
-    depends_on:
-      - auth
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "kong", "health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # Authentication Service
-  auth:
-    build:
-      context: ../unison-auth
-    image: ghcr.io/project-unisonos/unison-auth:latest
-    container_name: unison-auth
-    networks:
-      auth:
-        ipv4_address: 172.23.0.20
-    environment:
-      UNISON_JWT_SECRET: ${UNISON_JWT_SECRET:-change-this-secret-key-in-production-256-bits-minimum}
-      UNISON_ACCESS_TOKEN_EXPIRE_MINUTES: "30"
-      UNISON_REFRESH_TOKEN_EXPIRE_MINUTES: "1440"
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      UNISON_ORCHESTRATOR_SERVICE_SECRET: ${UNISON_ORCHESTRATOR_SERVICE_SECRET:-orchestrator-secret}
-      UNISON_INFERENCE_SERVICE_SECRET: ${UNISON_INFERENCE_SERVICE_SECRET:-inference-secret}
-      UNISON_POLICY_SERVICE_SECRET: ${UNISON_POLICY_SERVICE_SECRET:-policy-secret}
-    depends_on:
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-
-  # Redis for Auth and Session Storage
-  redis:
-    image: redis:7-alpine
-    container_name: unison-redis
-    networks:
-      auth:
-        ipv4_address: 172.23.0.30
-    volumes:
-      - redis_data:/data
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-    command: >
-      redis-server
-      --appendonly yes
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
-      ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-
-  # Orchestrator Service
+  # Public edge (no host ports by default in security mode).
   orchestrator:
-    build:
-      context: ..
-      dockerfile: unison-orchestrator/Dockerfile
-    image: ghcr.io/project-unisonos/unison-orchestrator:latest
-    container_name: unison-orchestrator
-    networks:
-      internal:
-        ipv4_address: 172.21.0.20
-      data:
-        ipv4_address: 172.22.0.20
-      auth:
-        ipv4_address: 172.23.0.40
-    environment:
-      UNISON_CONTEXT_HOST: "context"
-      UNISON_CONTEXT_PORT: "8081"
-      UNISON_STORAGE_HOST: "storage"
-      UNISON_STORAGE_PORT: "8082"
-      UNISON_POLICY_HOST: "policy"
-      UNISON_POLICY_PORT: "8083"
-      UNISON_INFERENCE_HOST: "inference"
-      UNISON_INFERENCE_PORT: "8087"
-      UNISON_AUTH_SERVICE_URL: "http://auth:8088"
-      UNISON_FORCE_HTTPS: "true"
-      UNISON_CORS_ORIGINS: "https://localhost:3000,https://app.unison.local"
-      UNISON_SERVICE_SECRET: ${UNISON_ORCHESTRATOR_SERVICE_SECRET:-orchestrator-secret}
-      UNISON_ALLOW_HS256_SERVICE_TOKENS: ${UNISON_ALLOW_HS256_SERVICE_TOKENS:-true}
-      UNISON_STREAM_ROM: ${UNISON_STREAM_ROM:-true}
-      UNISON_CONTEXT_SNAPSHOT_CACHE_TTL_MS: ${UNISON_CONTEXT_SNAPSHOT_CACHE_TTL_MS:-2000}
-      UNISON_REDACT_TRACE_ARTIFACTS: ${UNISON_REDACT_TRACE_ARTIFACTS:-true}
-      UNISON_REDACT_EVENT_GRAPH: ${UNISON_REDACT_EVENT_GRAPH:-true}
-    depends_on:
-      auth:
-        condition: service_healthy
-      context:
-        condition: service_healthy
-      storage:
-        condition: service_healthy
-      policy:
-        condition: service_healthy
-      inference:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 1G
-        reservations:
-          cpus: '1.0'
-          memory: 512M
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /var/tmp
+    networks: [public, internal, auth]
+    security_opt: ["no-new-privileges:true"]
 
-  # Context Service
-  context:
-    build:
-      context: ..
-      dockerfile: unison-context/Dockerfile
-    image: ghcr.io/project-unisonos/unison-context:latest
-    container_name: unison-context
-    networks:
-      internal:
-        ipv4_address: 172.21.0.30
-      data:
-        ipv4_address: 172.22.0.30
-    environment:
-      UNISON_FORCE_HTTPS: "true"
-      UNISON_CORS_ORIGINS: "https://localhost:3000,https://app.unison.local"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /var/tmp
+  experience-renderer:
+    networks: [public, internal]
+    security_opt: ["no-new-privileges:true"]
 
-  # Storage Service
-  storage:
-    build:
-      context: ..
-      dockerfile: unison-storage/Dockerfile
-    image: ghcr.io/project-unisonos/unison-storage:latest
-    container_name: unison-storage
-    networks:
-      data:
-        ipv4_address: 172.22.0.40
-    volumes:
-      - unison_data:/data
-    environment:
-      UNISON_FORCE_HTTPS: "true"
-      UNISON_CORS_ORIGINS: "https://localhost:3000,https://app.unison.local"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /var/tmp
+  # Internal app network.
+  actuation:
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
 
-  # Policy Service
-  policy:
-    build:
-      context: ..
-      dockerfile: unison-policy/Dockerfile
-    image: ghcr.io/project-unisonos/unison-policy:latest
-    container_name: unison-policy
-    networks:
-      internal:
-        ipv4_address: 172.21.0.40
-      data:
-        ipv4_address: 172.22.0.50
-    environment:
-      UNISON_FORCE_HTTPS: "true"
-      UNISON_CORS_ORIGINS: "https://localhost:3000,https://app.unison.local"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /var/tmp
+  comms:
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
 
-  # Inference Service
   inference:
-    build:
-      context: ../unison-inference
-    image: ghcr.io/project-unisonos/unison-inference:latest
-    container_name: unison-inference
-    networks:
-      inference:
-        ipv4_address: 172.24.0.20
-      internal:
-        ipv4_address: 172.21.0.50
-    environment:
-      UNISON_INFERENCE_PROVIDER: "ollama"
-      UNISON_INFERENCE_MODEL: "llama3.2"
-      OLLAMA_BASE_URL: "http://ollama:11434"
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
-      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
-      UNISON_FORCE_HTTPS: "true"
-      UNISON_CORS_ORIGINS: "https://localhost:3000,https://app.unison.local"
-      UNISON_SERVICE_SECRET: ${UNISON_INFERENCE_SERVICE_SECRET:-inference-secret}
-      UNISON_ALLOW_HS256_SERVICE_TOKENS: ${UNISON_ALLOW_HS256_SERVICE_TOKENS:-true}
-    depends_on:
-      ollama:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 2G
-        reservations:
-          cpus: '1.0'
-          memory: 1G
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /var/tmp
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
 
-  # Ollama Service (Local LLM)
-  ollama:
-    image: ollama/ollama:latest
-    container_name: unison-ollama
-    networks:
-      inference:
-        ipv4_address: 172.24.0.30
-    volumes:
-      - ollama_data:/root/.ollama
-    environment:
-      OLLAMA_HOST: "0.0.0.0"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    deploy:
-      resources:
-        limits:
-          cpus: '4.0'
-          memory: 4G
-        reservations:
-          cpus: '2.0'
-          memory: 2G
-    security_opt:
-      - no-new-privileges:true
-
-  # IO Core Service
   io-core:
-    build:
-      context: ..
-      dockerfile: unison-io-core/Dockerfile
-    image: ghcr.io/project-unisonos/unison-io-core:latest
-    container_name: unison-io-core
-    networks:
-      internal:
-        ipv4_address: 172.21.0.60
-    environment:
-      UNISON_ORCH_HOST: "orchestrator"
-      UNISON_ORCH_PORT: "8080"
-      UNISON_FORCE_HTTPS: "true"
-      UNISON_CORS_ORIGINS: "https://localhost:3000,https://app.unison.local"
-    depends_on:
-      orchestrator:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8085/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /var/tmp
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
 
-  # IO Speech Service
   io-speech:
-    build:
-      context: ..
-      dockerfile: unison-io-speech/Dockerfile
-    image: ghcr.io/project-unisonos/unison-io-speech:latest
-    container_name: unison-io-speech
-    networks:
-      internal:
-        ipv4_address: 172.21.0.70
-    environment:
-      UNISON_FORCE_HTTPS: "true"
-      UNISON_CORS_ORIGINS: "https://localhost:3000,https://app.unison.local"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /var/tmp
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
 
-  # IO Vision Service
   io-vision:
-    build:
-      context: ..
-      dockerfile: unison-io-vision/Dockerfile
-    image: ghcr.io/project-unisonos/unison-io-vision:latest
-    container_name: unison-io-vision
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
+
+  io-bci:
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
+
+  intent-graph:
+    networks: [internal, data]
+    security_opt: ["no-new-privileges:true"]
+
+  context-graph:
+    networks: [internal, data]
+    security_opt: ["no-new-privileges:true"]
+
+  # Auth plane.
+  auth:
+    networks: [auth, data]
+    security_opt: ["no-new-privileges:true"]
+
+  consent:
+    networks: [auth, data]
+    security_opt: ["no-new-privileges:true"]
+
+  policy:
+    networks: [internal]
+    security_opt: ["no-new-privileges:true"]
+
+  # Data plane.
+  context:
+    networks: [internal, data]
+    security_opt: ["no-new-privileges:true"]
+
+  storage:
+    networks: [internal, data]
+    security_opt: ["no-new-privileges:true"]
+
+  postgres:
+    networks: [data]
+
+  redis:
+    networks: [data]
+
+  neo4j:
+    networks: [data]
+
+  # Observability stays internal in security mode.
+  jaeger:
+    networks: [internal]
+
+  # VPN/VDI: keep wiring, but don't publish to host by default in security mode.
+  network-vpn:
     networks:
       internal:
-        ipv4_address: 172.21.0.80
-    environment:
-      UNISON_FORCE_HTTPS: "true"
-      UNISON_CORS_ORIGINS: "https://localhost:3000,https://app.unison.local"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 1G
-        reservations:
-          cpus: '1.0'
-          memory: 512M
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /var/tmp
+        aliases:
+          - agent-vdi
 
-volumes:
-  kong_data:
-    driver: local
+  # Optional tooling profiles (keep internal-only).
+  ollama:
+    networks: [internal]
+
+  payments:
+    networks: [internal]
+
+networks:
+  public: {}
+  internal:
+    internal: true
+  data:
+    internal: true
+  auth:
+    internal: true

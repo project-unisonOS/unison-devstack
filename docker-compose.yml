@@ -1,3 +1,4 @@
+name: unison-devstack
 services:
   unison-common-wheel:
     profiles: ["build-common"]
@@ -12,8 +13,6 @@ services:
       dockerfile: unison-intent-graph/Dockerfile
     image: ghcr.io/project-unisonos/unison-intent-graph:latest
     restart: unless-stopped
-    ports:
-    - 8089:8080
     environment:
       INTENT_GRAPH_PORT: 8080
       INTENT_GRAPH_HOST: 0.0.0.0
@@ -50,8 +49,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-context-graph:latest
     restart: unless-stopped
-    ports:
-    - 8091:8081
     environment:
       CONTEXT_GRAPH_PORT: 8081
       CONTEXT_GRAPH_HOST: 0.0.0.0
@@ -86,8 +83,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-experience-renderer:latest
     restart: unless-stopped
-    ports:
-    - 8092:8082
     environment:
       EXPERIENCE_RENDERER_PORT: 8082
       EXPERIENCE_RENDERER_HOST: 0.0.0.0
@@ -122,9 +117,6 @@ services:
       dockerfile: unison-network-vpn/Dockerfile
     image: ghcr.io/project-unisonos/unison-network-vpn:latest
     restart: unless-stopped
-    ports:
-    - 8094:8084
-    - 8093:8083
     environment:
       VPN_HEALTH_PORT: 8084
       WIREGUARD_INTERFACE: wg0
@@ -202,8 +194,6 @@ services:
         REPO_PATH: unison-orchestrator
     image: ghcr.io/project-unisonos/unison-orchestrator:latest
     restart: unless-stopped
-    ports:
-    - 8080:8080
     environment:
       UNISON_CONTEXT_HOST: context
       UNISON_CONTEXT_PORT: '8081'
@@ -285,8 +275,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-actuation:latest
     restart: unless-stopped
-    ports:
-    - 8096:8086
     environment:
       ACTUATION_PORT: 8086
       ACTUATION_HOST: 0.0.0.0
@@ -329,8 +317,6 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    ports:
-    - 6379:6379
     volumes:
     - redis_data:/data
     command: redis-server --appendonly yes
@@ -346,8 +332,6 @@ services:
   postgres:
     image: postgres:15-alpine
     restart: unless-stopped
-    ports:
-    - 5432:5432
     environment:
       POSTGRES_DB: unison
       POSTGRES_USER: unison
@@ -365,9 +349,6 @@ services:
   neo4j:
     image: neo4j:5.25.1
     restart: unless-stopped
-    ports:
-    - 7474:7474
-    - 7687:7687
     environment:
       NEO4J_AUTH: ${GRAPH_DB_USER:-neo4j}/${GRAPH_DB_PASSWORD:-test-password}
       NEO4J_dbms_memory_heap_max__size: 512m
@@ -396,8 +377,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-auth:latest
     restart: unless-stopped
-    ports:
-    - 8088:8088
     environment:
       AUTH_PORT: 8088
       AUTH_HOST: 0.0.0.0
@@ -436,8 +415,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-consent:latest
     restart: unless-stopped
-    ports:
-    - 7072:7072
     environment:
       UNISON_CONSENT_PORT: 7072
       UNISON_CONSENT_HOST: 0.0.0.0
@@ -463,11 +440,6 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:latest
     restart: unless-stopped
-    ports:
-    - 16686:16686
-    - 4317:4317
-    - 4318:4318
-    - 14250:14250
     environment:
       COLLECTOR_OTLP_ENABLED: 'true'
   inference:
@@ -478,8 +450,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-inference:latest
     restart: unless-stopped
-    ports:
-    - 8087:8087
     environment:
       UNISON_INFERENCE_PROVIDER: ollama
       UNISON_INFERENCE_MODEL: llama3.2
@@ -497,8 +467,6 @@ services:
   ollama:
     image: ollama/ollama:latest
     restart: unless-stopped
-    ports:
-    - 11434:11434
     volumes:
     - ollama_data:/root/.ollama
     pull_policy: always
@@ -526,8 +494,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-io-core:latest
     restart: unless-stopped
-    ports:
-    - 8085:8085
     environment:
       UNISON_ORCH_HOST: orchestrator
       UNISON_ORCH_PORT: '8080'
@@ -552,8 +518,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-io-speech:latest
     restart: unless-stopped
-    ports:
-    - 8084:8084
     environment:
       UNISON_ORCH_HOST: orchestrator
       UNISON_ORCH_PORT: '8080'
@@ -578,8 +542,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-io-bci:latest
     restart: unless-stopped
-    ports:
-    - 8094:8089
     environment:
       UNISON_ORCH_HOST: orchestrator
       UNISON_ORCH_PORT: '8080'
@@ -608,8 +570,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-io-vision:latest
     restart: unless-stopped
-    ports:
-    - 8086:8086
     healthcheck:
       test:
       - CMD
@@ -629,8 +589,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-context:latest
     restart: unless-stopped
-    ports:
-    - 8081:8081
     environment:
       UNISON_CONTEXT_DATABASE_URL: postgresql://unison:unison_password@postgres:5432/unison
       UNISON_STORAGE_HOST: storage
@@ -659,8 +617,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-payments:latest
     restart: unless-stopped
-    ports:
-    - 8089:8089
     environment:
       UNISON_AUTH_SECRET: dev-auth-secret
       UNISON_AUTH_ISSUER: unison-auth
@@ -684,8 +640,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-storage:latest
     restart: unless-stopped
-    ports:
-    - 8082:8082
     volumes:
     - unison_data:/data
     environment:
@@ -713,8 +667,6 @@ services:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
     image: ghcr.io/project-unisonos/unison-policy:latest
     restart: unless-stopped
-    ports:
-    - 8083:8083
     healthcheck:
       test:
       - CMD
@@ -731,8 +683,6 @@ services:
       dockerfile: unison-comms/Dockerfile
     image: ghcr.io/project-unisonos/unison-comms:latest
     restart: unless-stopped
-    ports:
-    - 8095:8080
     environment:
       COMMS_HOST: 0.0.0.0
       COMMS_PORT: 8080
