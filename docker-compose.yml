@@ -226,6 +226,7 @@ services:
       UNISON_EXPERIENCE_RENDERER_PORT: '8082'
       UNISON_JWT_SECRET: dev-secret-key-change-in-production-256-bits-minimum
       UNISON_SERVICE_SECRET: dev-service-secret-change-in-production
+      UNISON_ALLOW_HS256_SERVICE_TOKENS: "true"
       UNISON_ENABLE_INPUT_ROUTES: "true"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       OTEL_SERVICE_NAME: unison-orchestrator
@@ -552,6 +553,7 @@ services:
       UNISON_ORCH_PORT: '8080'
       EXPERIENCE_RENDERER_URL: http://experience-renderer:8082
       UNISON_SERVICE_SECRET: dev-service-secret-change-in-production
+      UNISON_ALLOW_HS256_SERVICE_TOKENS: "true"
     healthcheck:
       test:
       - CMD

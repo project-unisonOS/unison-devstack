@@ -197,6 +197,7 @@ services:
       UNISON_FORCE_HTTPS: "true"
       UNISON_CORS_ORIGINS: "https://localhost:3000,https://app.unison.local"
       UNISON_SERVICE_SECRET: ${UNISON_ORCHESTRATOR_SERVICE_SECRET:-orchestrator-secret}
+      UNISON_ALLOW_HS256_SERVICE_TOKENS: ${UNISON_ALLOW_HS256_SERVICE_TOKENS:-true}
     depends_on:
       auth:
         condition: service_healthy
@@ -362,6 +363,7 @@ services:
       UNISON_FORCE_HTTPS: "true"
       UNISON_CORS_ORIGINS: "https://localhost:3000,https://app.unison.local"
       UNISON_SERVICE_SECRET: ${UNISON_INFERENCE_SERVICE_SECRET:-inference-secret}
+      UNISON_ALLOW_HS256_SERVICE_TOKENS: ${UNISON_ALLOW_HS256_SERVICE_TOKENS:-true}
     depends_on:
       ollama:
         condition: service_healthy
