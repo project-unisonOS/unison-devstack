@@ -99,6 +99,8 @@ services:
       PORCUPINE_ACCESS_KEY: ${PORCUPINE_ACCESS_KEY:-}
       PORCUPINE_KEYWORD_BASE64: ${PORCUPINE_KEYWORD_BASE64:-}
       UNISON_ALWAYS_ON_MIC: ${UNISON_ALWAYS_ON_MIC:-false}
+      UNISON_REDACT_RENDERER_EVENTS: "true"
+      UNISON_RENDERER_MAX_ENVELOPE_BYTES: "131072"
     healthcheck:
       test:
       - CMD
@@ -228,6 +230,8 @@ services:
       UNISON_SERVICE_SECRET: dev-service-secret-change-in-production
       UNISON_ALLOW_HS256_SERVICE_TOKENS: "true"
       UNISON_ENABLE_INPUT_ROUTES: "true"
+      UNISON_REDACT_TRACE_ARTIFACTS: "true"
+      UNISON_REDACT_EVENT_GRAPH: "true"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       OTEL_SERVICE_NAME: unison-orchestrator
       OTEL_SERVICE_VERSION: 1.0.0
