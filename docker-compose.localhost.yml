@@ -1,0 +1,10 @@
+name: unison-devstack
+
+# Optional localhost publishing for the renderer at http://localhost (port 80).
+# Use via the meta repo scripts:
+#   UNISON_RENDERER_LOCALHOST=1 ./scripts/up.sh
+services:
+  experience-renderer:
+    ports:
+      - "80:8082"
+

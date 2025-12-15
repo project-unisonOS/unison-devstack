@@ -81,6 +81,8 @@ services:
       dockerfile: Dockerfile
       args:
         COMMON_WHEEL: /tmp/wheels/unison_common-0.1.0-py3-none-any.whl
+        GIT_SHA: ${UNISON_EXPERIENCE_RENDERER_SHA:-unknown}
+        BUILD_TIME: ${UNISON_BUILD_TIME:-unknown}
     image: ghcr.io/project-unisonos/unison-experience-renderer:latest
     restart: unless-stopped
     environment:
@@ -96,6 +98,10 @@ services:
       UNISON_ALWAYS_ON_MIC: ${UNISON_ALWAYS_ON_MIC:-false}
       UNISON_REDACT_RENDERER_EVENTS: "true"
       UNISON_RENDERER_MAX_ENVELOPE_BYTES: "131072"
+      UNISON_RENDERER_BUILD_SHA: ${UNISON_EXPERIENCE_RENDERER_SHA:-unknown}
+      UNISON_RENDERER_BUILD_TIME: ${UNISON_BUILD_TIME:-unknown}
+      UNISON_RENDERER_BUILD_SOURCE: ${UNISON_BUILD_SOURCE:-unison-workspace/devstack}
+      UNISON_RENDERER_DEV_WATERMARK: ${UNISON_RENDERER_DEV_WATERMARK:-true}
     healthcheck:
       test:
       - CMD
