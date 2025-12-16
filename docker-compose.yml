@@ -239,9 +239,21 @@ services:
       DISABLE_AUTH_FOR_TESTS: "true"
       UNISON_STREAM_ROM: "true"
       UNISON_CONTEXT_SNAPSHOT_CACHE_TTL_MS: "2000"
+      UNISON_PHASE1_PIPELINE: "true"
+      UNISON_PHASE1_TRACE_ENABLED: "true"
+      UNISON_PHASE1_TRACE_PATH: "/app/var/traces/unison-phase1.ndjson"
+      UNISON_PHASE1_SCHEMA_DIR: "/app/schemas/phase1"
+      UNISON_PLANNER_MODE: "llm"
+      UNISON_PLANNER_PROVIDER: "ollama"
+      UNISON_PLANNER_MODEL: "qwen2.5:1.5b"
+      UNISON_MODEL_DIR: /var/lib/unison/models
+      UNISON_MODEL_PACK_REQUIRED: "unison.phase1.1.speech@0.1.1"
     volumes:
       - ../manifests:/manifests:ro
       - ../../traces:/app/traces
+      - ../../var/traces:/app/var/traces
+      - ../../schemas/phase1:/app/schemas/phase1:ro
+      - unison_models:/var/lib/unison/models
     healthcheck:
       test:
       - CMD
@@ -460,8 +472,11 @@ services:
     restart: unless-stopped
     environment:
       UNISON_INFERENCE_PROVIDER: ollama
-      UNISON_INFERENCE_MODEL: llama3.2
+      UNISON_INFERENCE_MODEL: qwen2.5:1.5b
       OLLAMA_BASE_URL: http://ollama:11434
+      UNISON_MODEL_DIR: /var/lib/unison/models
+    volumes:
+    - unison_models:/var/lib/unison/models
     healthcheck:
       test:
       - CMD
@@ -475,8 +490,10 @@ services:
   ollama:
     image: ollama/ollama:latest
     restart: unless-stopped
+    environment:
+      OLLAMA_MODELS: /var/lib/unison/models/ollama
     volumes:
-    - ollama_data:/root/.ollama
+    - unison_models:/var/lib/unison/models
     pull_policy: always
     profiles:
     - tools
@@ -530,6 +547,9 @@ services:
       EXPERIENCE_RENDERER_URL: http://experience-renderer:8082
       UNISON_SERVICE_SECRET: dev-service-secret-change-in-production
       UNISON_ALLOW_HS256_SERVICE_TOKENS: "true"
+      UNISON_MODEL_DIR: /var/lib/unison/models
+    volumes:
+    - unison_models:/var/lib/unison/models
     healthcheck:
       test:
       - CMD
@@ -703,7 +723,7 @@ services:
       start_period: 30s
 volumes:
   unison_data: null
-  ollama_data: null
+  unison_models: null
   redis_data: null
   postgres_data: null
   neo4j_data: null

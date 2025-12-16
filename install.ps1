@@ -137,7 +137,7 @@ services:
       - "8087:8087"
     environment:
       UNISON_INFERENCE_PROVIDER: "ollama"
-      UNISON_INFERENCE_MODEL: "llama3.2"
+      UNISON_INFERENCE_MODEL: "qwen2.5"
       OLLAMA_BASE_URL: "http://ollama:11434"
     depends_on:
       - ollama
@@ -338,13 +338,13 @@ function Set-OllamaModel {
         }
 
         if ($timeout -gt 0) {
-            # Pull llama3.2 model
-            docker exec ollama ollama pull llama3.2
+            # Pull qwen2.5 model
+            docker exec ollama ollama pull qwen2.5
             Write-Success "Ollama model setup complete"
         }
         else {
             Write-Warning "Ollama did not become ready within timeout"
-            Write-Info "You can pull the model later with: docker exec ollama ollama pull llama3.2"
+            Write-Info "You can pull the model later with: docker exec ollama ollama pull qwen2.5"
         }
     }
 }
@@ -532,7 +532,7 @@ Service URLs:
 
 Ollama:
     API:     http://localhost:11434
-    Model:   llama3.2 (pulled automatically)
+    Model:   qwen2.5 (pulled automatically)
 
 "@
     }

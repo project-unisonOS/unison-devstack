@@ -235,7 +235,7 @@ class UnisonCLI:
                     if line and not line.startswith('#'):
                         print(f"  {line}")
 
-    def install_ollama_model(self, model: str = 'llama3.2'):
+    def install_ollama_model(self, model: str = 'qwen2.5'):
         """Install Ollama model."""
         print(f"📦 Installing Ollama model: {model}")
 
@@ -323,7 +323,7 @@ Examples:
 
     # Install Ollama model command
     ollama_parser = subparsers.add_parser('install-ollama-model', help='Install Ollama model')
-    ollama_parser.add_argument('model', nargs='?', default='llama3.2', help='Model to install')
+    ollama_parser.add_argument('model', nargs='?', default='qwen2.5', help='Model to install')
 
     args = parser.parse_args()
 

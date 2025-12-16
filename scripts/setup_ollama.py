@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Setup script for Ollama models.
-Pulls the default model (llama3.2) for local inference.
+Pulls the default model (qwen2.5) for local inference.
 """
 
 import os
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "localhost")
 OLLAMA_PORT = os.getenv("OLLAMA_PORT", "11434")
 OLLAMA_BASE_URL = f"http://{OLLAMA_HOST}:{OLLAMA_PORT}"
-DEFAULT_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
+DEFAULT_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5")
 
 def wait_for_ollama(max_attempts=30, delay=2):
     """Wait for Ollama service to be ready."""
