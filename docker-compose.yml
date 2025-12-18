@@ -208,6 +208,9 @@ services:
       UNISON_POLICY_PORT: '8083'
       UNISON_INFERENCE_HOST: inference
       UNISON_INFERENCE_PORT: '8087'
+      UNISON_CAPABILITY_HOST: capability
+      UNISON_CAPABILITY_PORT: '8102'
+      UNISON_CAPABILITY_BEARER_TOKEN: dev-capability-token
       UNISON_ACTUATION_HOST: actuation
       UNISON_ACTUATION_PORT: '8086'
       UNISON_COMMS_HOST: comms
@@ -272,6 +275,8 @@ services:
       storage:
         condition: service_healthy
       policy:
+        condition: service_healthy
+      capability:
         condition: service_healthy
       inference:
         condition: service_healthy
@@ -702,6 +707,33 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+  capability:
+    build:
+      context: ../../unison-capability
+      dockerfile: Dockerfile
+    image: ghcr.io/project-unisonos/unison-capability:latest
+    restart: unless-stopped
+    environment:
+      UNISON_CAPABILITY_HOST: 0.0.0.0
+      UNISON_CAPABILITY_PORT: 8102
+      UNISON_CAPABILITY_UNSAFE_ALLOW_NONLOCAL: "true"
+      UNISON_CAPABILITY_AUTH_MODE: static_bearer
+      UNISON_CAPABILITY_BEARER_TOKEN: dev-capability-token
+      UNISON_CAPABILITY_EGRESS_ALLOW_PRIVATE_NETWORKS: "true"
+      UNISON_CAPABILITY_EGRESS_ALLOWLIST: comms
+      UNISON_CAPABILITY_STORE_DIR: /var/lib/unison/capabilities
+    volumes:
+    - unison_data:/var/lib/unison/capabilities
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8102/readyz
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
   comms:
     build:
       context: ../../unison-comms
@@ -711,6 +743,7 @@ services:
     environment:
       COMMS_HOST: 0.0.0.0
       COMMS_PORT: 8080
+      COMMS_UNSAFE_ALLOW_NONLOCAL: "true"
     healthcheck:
       test:
       - CMD

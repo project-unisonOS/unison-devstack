@@ -98,6 +98,48 @@ def main():
         fail("io-core emit failed", body)
     print("[ok] io-core -> orchestrator echo")
 
+    # 3.5) Comms via resolver (orchestrator -> capability -> comms MCP surface)
+    stamp = int(time.time())
+    subject = f"e2e-{stamp}"
+    compose_env = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "source": "e2e-script",
+        "intent": "comms.compose",
+        "payload": {
+            "person_id": PERSON_ID,
+            "channel": "unison",
+            "recipients": ["peer-1"],
+            "subject": subject,
+            "body": "hello from e2e comms",
+        },
+    }
+    ok, st, body = post_json(f"{ORCH}/event", compose_env)
+    if not ok or not isinstance(body, dict) or not body.get("ok"):
+        fail("comms.compose failed", body)
+    result = body.get("result") or {}
+    if not isinstance(result, dict) or not result.get("ok"):
+        fail("comms.compose returned error result", body)
+    print("[ok] comms.compose (unison) via resolver")
+
+    check_env = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "source": "e2e-script",
+        "intent": "comms.check",
+        "payload": {"person_id": "peer-1", "channel": "unison"},
+    }
+    ok, st, body = post_json(f"{ORCH}/event", check_env)
+    if not ok or not isinstance(body, dict) or not body.get("ok"):
+        fail("comms.check (unison) failed", body)
+    result = body.get("result") or {}
+    if not isinstance(result, dict) or not result.get("ok"):
+        fail("comms.check returned error result", body)
+    msgs = result.get("messages") or []
+    if not isinstance(msgs, list):
+        fail("comms.check messages not a list", body)
+    if not any(isinstance(m, dict) and m.get("subject") == subject for m in msgs):
+        fail("comms.check did not return composed message", {"expected_subject": subject, "messages": msgs})
+    print("[ok] comms.check (unison) returns composed message via resolver")
+
     # 4) Policy require_confirmation path via orchestrator
     env2 = {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
