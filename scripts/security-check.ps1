@@ -42,11 +42,16 @@ function Test-AuthService {
         return $false
     }
 
+    if (-not $env:UNISON_TEST_ADMIN_USERNAME -or -not $env:UNISON_TEST_ADMIN_PASSWORD) {
+        Write-Warning "Skipping token endpoint login check; set UNISON_TEST_ADMIN_USERNAME and UNISON_TEST_ADMIN_PASSWORD"
+        return $true
+    }
+
     try {
-        # Test token endpoint with default credentials
+        # Test token endpoint with explicitly supplied test credentials
         $tokenResponse = Invoke-RestMethod -Uri "$AuthUrl/token" -Method Post `
             -ContentType "application/x-www-form-urlencoded" `
-            -Body "grant_type=password&username=admin&password=admin123" `
+            -Body "grant_type=password&username=$($env:UNISON_TEST_ADMIN_USERNAME)&password=$($env:UNISON_TEST_ADMIN_PASSWORD)" `
             -ErrorAction Stop
 
         if ($tokenResponse.access_token) {

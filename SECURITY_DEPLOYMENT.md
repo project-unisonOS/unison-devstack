@@ -109,11 +109,7 @@ The auth service provides:
 - Token blacklisting with Redis
 - Role-based access control
 
-Default users (change passwords in production):
-- admin / admin123
-- operator / operator123
-- developer / dev123
-- user / user123
+Development-only seeded users may exist in some local evaluation paths, but production and supported install paths must use explicit bootstrap and rotated credentials.
 
 ### Security Headers
 
@@ -219,7 +215,7 @@ Prometheus-compatible metrics at `/metrics`:
 # Get access token
 curl -X POST https://your-domain.com/auth/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=password&username=admin&password=admin123"
+  -d "grant_type=password&username=<admin-username>&password=<admin-password>"
 
 # Use token for authenticated requests
 curl -X POST https://your-domain.com/api/event \
@@ -239,7 +235,7 @@ curl -X POST https://your-domain.com/api/event \
 # Service-to-service authentication
 curl -X POST http://auth:8088/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=client_credentials&username=service-orchestrator&password=orchestrator-secret"
+  -d "grant_type=client_credentials&username=service-orchestrator&password=<service-secret>"
 ```
 
 ## Troubleshooting

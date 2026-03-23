@@ -15,6 +15,8 @@ NC='\033[0m' # No Color
 AUTH_URL="${UNISON_AUTH_URL:-http://localhost:8088}"
 API_URL="${UNISON_API_URL:-http://localhost}"
 KONG_ADMIN_URL="${UNISON_KONG_ADMIN_URL:-http://localhost:8001}"
+TEST_ADMIN_USERNAME="${UNISON_TEST_ADMIN_USERNAME:-}"
+TEST_ADMIN_PASSWORD="${UNISON_TEST_ADMIN_PASSWORD:-}"
 
 # Test functions
 test_auth_service() {
@@ -28,10 +30,15 @@ test_auth_service() {
         return 1
     fi
 
-    # Test token endpoint with default credentials
+    if [[ -z "$TEST_ADMIN_USERNAME" || -z "$TEST_ADMIN_PASSWORD" ]]; then
+        echo -e "${YELLOW}⚠ Skipping token endpoint login check; set UNISON_TEST_ADMIN_USERNAME and UNISON_TEST_ADMIN_PASSWORD${NC}"
+        return 0
+    fi
+
+    # Test token endpoint with explicitly supplied test credentials
     local token_response=$(curl -s -X POST "$AUTH_URL/token" \
         -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "grant_type=password&username=admin&password=admin123" || echo "")
+        -d "grant_type=password&username=${TEST_ADMIN_USERNAME}&password=${TEST_ADMIN_PASSWORD}" || echo "")
 
     if echo "$token_response" | grep -q "access_token"; then
         echo -e "${GREEN}✓ Token endpoint working${NC}"
