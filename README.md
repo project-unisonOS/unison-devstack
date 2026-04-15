@@ -26,12 +26,14 @@ With Docker running:
 docker compose -f docker-compose.yml -f docker-compose.ports.yml up -d --build
 python scripts/e2e_smoke.py
 python scripts/test_multimodal.py
+python scripts/validate_golden_path.py
 ```
 
 Coverage note:
-- `scripts/e2e_smoke.py` is the core devstack smoke path
-- `scripts/test_multimodal.py` is separate and should be run explicitly when multimodal coverage matters
-- do not treat the smoke test alone as evidence that the full multimodal path is validated
+- `scripts/e2e_smoke.py` is the core devstack smoke path for service wiring and integration plumbing
+- `scripts/test_multimodal.py` validates speech and vision paths separately
+- `scripts/validate_golden_path.py` validates the current renderer-led golden-path contract: orchestrator startup status, renderer onboarding aggregation, briefing via `dashboard.refresh`, and companion voice ingest
+- do not treat the smoke test alone as evidence that the full multimodal or renderer-led golden path is validated
 
 Health checks (devstack defaults):
 ```bash
