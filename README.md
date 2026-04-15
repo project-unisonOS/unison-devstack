@@ -33,6 +33,7 @@ Coverage note:
 - `scripts/e2e_smoke.py` is the core devstack smoke path for service wiring and integration plumbing
 - `scripts/test_multimodal.py` validates speech and vision paths separately
 - `scripts/validate_golden_path.py` validates the current renderer-led golden-path contract: orchestrator startup status, renderer onboarding aggregation, briefing via `dashboard.refresh`, and companion voice ingest
+- both validators accept `UNISON_BEARER_TOKEN` when running against an auth-enforcing runtime path
 - do not treat the smoke test alone as evidence that the full multimodal or renderer-led golden path is validated
 
 Health checks (devstack defaults):

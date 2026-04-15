@@ -23,11 +23,19 @@ ORCH = os.getenv("UNISON_ORCH_URL", "http://localhost:8080")
 RENDERER = os.getenv("UNISON_RENDERER_URL", "http://localhost:8092")
 PERSON_ID = os.getenv("UNISON_PERSON_ID", "local-person")
 SESSION_ID = os.getenv("UNISON_SESSION_ID", "golden-path-session")
+BEARER_TOKEN = os.getenv("UNISON_BEARER_TOKEN", "")
+
+
+def _headers(url: str) -> Dict[str, str]:
+    headers: Dict[str, str] = {}
+    if BEARER_TOKEN and (url.startswith(ORCH) or url.startswith(RENDERER)):
+        headers["Authorization"] = f"Bearer {BEARER_TOKEN}"
+    return headers
 
 
 def get_json(url: str) -> Tuple[bool, int, Any]:
     try:
-        r = requests.get(url, timeout=5)
+        r = requests.get(url, headers=_headers(url), timeout=5)
         try:
             data = r.json()
         except Exception:
@@ -39,7 +47,7 @@ def get_json(url: str) -> Tuple[bool, int, Any]:
 
 def post_json(url: str, body: Dict[str, Any]) -> Tuple[bool, int, Any]:
     try:
-        r = requests.post(url, json=body, timeout=8)
+        r = requests.post(url, json=body, headers=_headers(url), timeout=8)
         try:
             data = r.json()
         except Exception:
