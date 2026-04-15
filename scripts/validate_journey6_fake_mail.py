@@ -13,7 +13,7 @@ from typing import Any, Dict, Tuple
 
 import requests
 
-COMMS = os.getenv("UNISON_COMMS_URL", "http://localhost:8087")
+COMMS = os.getenv("UNISON_COMMS_URL", "http://localhost:8088")
 PERSON_ID = os.getenv("UNISON_PERSON_ID", "local-user")
 BEARER_TOKEN = os.getenv("UNISON_BEARER_TOKEN", "")
 
