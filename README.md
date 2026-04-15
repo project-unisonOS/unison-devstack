@@ -7,7 +7,11 @@ Docker Compose setup for core Unison services.
 Using the meta repo: if you cloned `unison-workspace`, you can run devstack from the root with `./scripts/up.sh` and `./scripts/smoke.sh` (those delegate to this compose file).
 
 ## Status
-Core DX stack (active) — canonical Docker Compose for local development and testing.
+Core DX stack (active) for local development and testing.
+
+Current scope note:
+- this compose file represents the broad local integration target, but it references some repos and services that are not present as submodules in the current `unison-workspace` snapshot
+- use it as the canonical dev wiring definition, but not yet as proof that the current workspace checkout alone is a complete single-clone source checkout for every referenced service
 
 See `../unison-docs/dev/developer-guide.md` for the end-to-end workflow.
 
@@ -23,6 +27,11 @@ docker compose -f docker-compose.yml -f docker-compose.ports.yml up -d --build
 python scripts/e2e_smoke.py
 python scripts/test_multimodal.py
 ```
+
+Coverage note:
+- `scripts/e2e_smoke.py` is the core devstack smoke path
+- `scripts/test_multimodal.py` is separate and should be run explicitly when multimodal coverage matters
+- do not treat the smoke test alone as evidence that the full multimodal path is validated
 
 Health checks (devstack defaults):
 ```bash
@@ -84,3 +93,11 @@ docker compose build
 Full docs at https://project-unisonos.github.io
 - Repo roles: `unison-docs/dev/unison-repo-roles.md`
 - Platform roadmap: `unison-docs/roadmap/deployment-platform-roadmap.md`
+
+Referenced but not currently included as `unison-workspace` submodules:
+- `unison-actuation`
+- `unison-capability`
+- `unison-comms`
+- `unison-io-bci`
+- `unison-network-vpn`
+- `unison-skill-register`
