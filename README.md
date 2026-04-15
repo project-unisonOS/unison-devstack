@@ -35,6 +35,7 @@ Coverage note:
 - `scripts/test_multimodal.py` validates speech and vision paths separately
 - `scripts/validate_golden_path.py` validates the current renderer-led golden-path contract: orchestrator startup status, renderer onboarding aggregation, briefing via `dashboard.refresh`, and companion voice ingest
 - `scripts/validate_journey6_fake_mail.py` validates the local no-credential Journey 6 email path against the stubbed comms provider
+- devstack now defaults internal orchestrator → capability resolver auth with `UNISON_CAPABILITY_BEARER_TOKEN=dev-capability-token` unless explicitly overridden
 - both validators accept `UNISON_BEARER_TOKEN` when running against an auth-enforcing runtime path
 - do not treat the smoke test alone as evidence that the full multimodal or renderer-led golden path is validated
 
@@ -101,7 +102,7 @@ Full docs at https://project-unisonos.github.io
 
 Referenced but not currently included as `unison-workspace` submodules:
 - `unison-actuation`
-- `unison-capability`
+- `unison-capabilities` (local checkout path for the capability resolver service repo)
 - `unison-comms`
 - `unison-io-bci`
 - `unison-network-vpn`

@@ -12,7 +12,7 @@ services:
     - 8088:8088
   comms:
     ports:
-    - 8095:8080
+    - 8105:8080
   consent:
     ports:
     - 7072:7072
