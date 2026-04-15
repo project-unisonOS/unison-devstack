@@ -27,12 +27,14 @@ docker compose -f docker-compose.yml -f docker-compose.ports.yml up -d --build
 python scripts/e2e_smoke.py
 python scripts/test_multimodal.py
 python scripts/validate_golden_path.py
+python scripts/validate_journey6_fake_mail.py
 ```
 
 Coverage note:
 - `scripts/e2e_smoke.py` is the core devstack smoke path for service wiring and integration plumbing
 - `scripts/test_multimodal.py` validates speech and vision paths separately
 - `scripts/validate_golden_path.py` validates the current renderer-led golden-path contract: orchestrator startup status, renderer onboarding aggregation, briefing via `dashboard.refresh`, and companion voice ingest
+- `scripts/validate_journey6_fake_mail.py` validates the local no-credential Journey 6 email path against the stubbed comms provider
 - both validators accept `UNISON_BEARER_TOKEN` when running against an auth-enforcing runtime path
 - do not treat the smoke test alone as evidence that the full multimodal or renderer-led golden path is validated
 
