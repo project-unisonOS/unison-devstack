@@ -14,11 +14,22 @@ POLICY = os.getenv("UNISON_POLICY_URL", "http://localhost:8083")
 ACT = os.getenv("UNISON_ACTUATION_URL", "http://localhost:8096")
 
 PERSON_ID = os.getenv("UNISON_PERSON_ID", "local-user")
+COMMS = os.getenv("UNISON_COMMS_URL", "http://localhost:8087")
+UNISON_BEARER_TOKEN = os.getenv("UNISON_BEARER_TOKEN", "")
+GMAIL_BOOTSTRAP_USERNAME = os.getenv("UNISON_TEST_GMAIL_USERNAME", "")
+GMAIL_BOOTSTRAP_APP_PASSWORD = os.getenv("UNISON_TEST_GMAIL_APP_PASSWORD", "")
+
+
+def _headers(url: str) -> Dict[str, str]:
+    headers: Dict[str, str] = {}
+    if UNISON_BEARER_TOKEN and (url.startswith(ORCH) or url.startswith(COMMS)):
+        headers["Authorization"] = f"Bearer {UNISON_BEARER_TOKEN}"
+    return headers
 
 
 def post_json(url: str, body: Dict[str, Any]) -> Tuple[bool, int, Any]:
     try:
-        r = requests.post(url, json=body, timeout=5)
+        r = requests.post(url, json=body, headers=_headers(url), timeout=5)
         try:
             data = r.json()
         except Exception:
@@ -30,7 +41,7 @@ def post_json(url: str, body: Dict[str, Any]) -> Tuple[bool, int, Any]:
 
 def get_json(url: str) -> Tuple[bool, int, Any]:
     try:
-        r = requests.get(url, timeout=5)
+        r = requests.get(url, headers=_headers(url), timeout=5)
         try:
             data = r.json()
         except Exception:
@@ -139,6 +150,35 @@ def main():
     if not any(isinstance(m, dict) and m.get("subject") == subject for m in msgs):
         fail("comms.check did not return composed message", {"expected_subject": subject, "messages": msgs})
     print("[ok] comms.check (unison) returns composed message via resolver")
+
+    # 3.6) Optional bounded Gmail Journey 6 path via unison-comms.
+    if GMAIL_BOOTSTRAP_USERNAME and GMAIL_BOOTSTRAP_APP_PASSWORD:
+        bootstrap_body = {
+            "provider": "gmail",
+            "username": GMAIL_BOOTSTRAP_USERNAME,
+            "app_password": GMAIL_BOOTSTRAP_APP_PASSWORD,
+        }
+        ok, st, body = post_json(f"{COMMS}/comms/onboarding/email/bootstrap", bootstrap_body)
+        if not ok or not isinstance(body, dict) or not body.get("ok"):
+            fail("gmail bootstrap failed", body)
+        print("[ok] gmail bootstrap accepted by unison-comms")
+
+        ok, st, body = post_json(f"{COMMS}/comms/onboarding/email/verify", {})
+        if not ok or not isinstance(body, dict) or body.get("provider") != "gmail":
+            fail("gmail verify failed", body)
+        print(f"[ok] gmail verify status: {body.get('status')}")
+
+        ok, st, body = post_json(
+            f"{COMMS}/comms/summarize",
+            {"person_id": PERSON_ID, "window": "today", "channel": "email"},
+        )
+        if not ok or not isinstance(body, dict) or body.get("provider") != "gmail":
+            fail("gmail summarize failed", body)
+        if "message_count" not in body or "status" not in body:
+            fail("gmail summarize missing bounded state fields", body)
+        print(f"[ok] gmail summarize status: {body.get('status')} (count={body.get('message_count')})")
+    else:
+        print("[skip] gmail Journey 6 path not exercised (set UNISON_TEST_GMAIL_USERNAME and UNISON_TEST_GMAIL_APP_PASSWORD)")
 
     # 4) Policy require_confirmation path via orchestrator
     env2 = {
