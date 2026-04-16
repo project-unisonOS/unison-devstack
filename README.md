@@ -4,7 +4,7 @@
 
 Docker Compose setup for core Unison services.
 
-Using the meta repo: if you cloned `unison-workspace`, you can run devstack from the root with `./scripts/up.sh` and `./scripts/smoke.sh` (those delegate to this compose file).
+Using the meta repo: if you cloned `unison-workspace`, you can run devstack from the root with `./scripts/up.sh` and `./scripts/smoke.sh` (those delegate to this compose file plus the published-port overlay).
 
 ## Status
 Core DX stack (active) for local development and testing.
@@ -30,6 +30,8 @@ python scripts/validate_golden_path.py
 python scripts/validate_journey6_fake_mail.py
 ```
 
+If bring-up fails on host port allocation, run `../scripts/doctor.sh` from `unison-workspace` or inspect `docker-compose.ports.yml` first. Published host ports for local dev are defined in the overlay, not just the base compose file.
+
 Coverage note:
 - `scripts/e2e_smoke.py` is the core devstack smoke path for service wiring and integration plumbing
 - `scripts/test_multimodal.py` validates speech and vision paths separately
@@ -39,14 +41,14 @@ Coverage note:
 - both validators accept `UNISON_BEARER_TOKEN` when running against an auth-enforcing runtime path
 - do not treat the smoke test alone as evidence that the full multimodal or renderer-led golden path is validated
 
-Health checks (devstack defaults):
+Health checks (devstack defaults with `docker-compose.ports.yml`):
 ```bash
 curl http://localhost:8080/health   # orchestrator
 curl http://localhost:8081/health   # context
 curl http://localhost:8082/health   # storage
 curl http://localhost:8083/health   # policy
 curl http://localhost:8096/health   # actuation (logging/mock mode)
-curl http://localhost:8095/health   # comms (stub)
+curl http://localhost:8105/health   # comms (stub)
 ```
 
 Actuation path:
