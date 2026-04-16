@@ -84,10 +84,11 @@ def main():
         "safety_context": {},
     }
     ok2, st2, body2 = post_json(f"{ORCH}/event", env_speech)
-    if not ok2 or not isinstance(body2, dict) or not body2.get("accepted"):
+    if not ok2 or not isinstance(body2, dict) or not body2.get("ok"):
         fail("orchestrator speech event failed", body2)
-    outputs = body2.get("outputs", {})
-    if outputs.get("transcript") != transcript:
+    result = body2.get("result") or {}
+    echo = result.get("echo") if isinstance(result, dict) else {}
+    if not isinstance(echo, dict) or echo.get("transcript") != transcript:
         fail("orchestrator did not echo transcript", body2)
     print("[ok] orchestrator echoed speech transcript")
 
@@ -110,10 +111,11 @@ def main():
         "safety_context": {},
     }
     ok2, st2, body2 = post_json(f"{ORCH}/event", env_vision)
-    if not ok2 or not isinstance(body2, dict) or not body2.get("accepted"):
+    if not ok2 or not isinstance(body2, dict) or not body2.get("ok"):
         fail("orchestrator vision event failed", body2)
-    outputs = body2.get("outputs", {})
-    if outputs.get("image_url") != image_url:
+    result = body2.get("result") or {}
+    echo = result.get("echo") if isinstance(result, dict) else {}
+    if not isinstance(echo, dict) or echo.get("image_url") != image_url:
         fail("orchestrator did not echo image_url", body2)
     print("[ok] orchestrator echoed vision image_url")
 
