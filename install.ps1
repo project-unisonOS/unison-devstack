@@ -9,6 +9,8 @@ param(
     [switch]$Help
 )
 
+Write-Warning "DEPRECATED: this prototype installer does not implement the approved UnisonOS appliance topology. Use unison-workspace/scripts/unison.ps1 for development."
+
 # Color output functions
 function Write-Info($message) {
     Write-Host "[INFO] $message" -ForegroundColor Blue
