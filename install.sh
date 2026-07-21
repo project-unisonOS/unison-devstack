@@ -4,6 +4,9 @@
 
 set -e
 
+echo "[DEPRECATED] This prototype installer does not implement the approved UnisonOS appliance topology." >&2
+echo "             For development, use unison-workspace/scripts/bootstrap-dev.sh and scripts/up.sh." >&2
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

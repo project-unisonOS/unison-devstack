@@ -14,19 +14,40 @@ services:
   orchestrator:
     networks: [public, internal, auth]
     security_opt: ["no-new-privileges:true"]
+    environment:
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
+      UNISON_ALLOW_HS256_SERVICE_TOKENS: "false"
+      UNISON_SERVICE_SECRET: ""
+      UNISON_CAPABILITY_BEARER_TOKEN: ""
+      UNISON_CONSENT_SECRET: ""
+      DISABLE_AUTH_FOR_TESTS: "false"
 
   experience-renderer:
-    networks: [public, internal]
+    networks: [public, internal, auth]
     security_opt: ["no-new-privileges:true"]
+    environment:
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
+      AUTH_BASE_URL: http://auth:8088
+      DISABLE_AUTH_FOR_TESTS: "false"
 
   # Internal app network.
   actuation:
-    networks: [internal]
+    networks: [internal, auth]
     security_opt: ["no-new-privileges:true"]
+    environment:
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
+      ACTUATION_SERVICE_TOKEN: ""
+      VDI_AGENT_TOKEN: ""
 
   comms:
-    networks: [internal]
+    networks: [internal, auth]
     security_opt: ["no-new-privileges:true"]
+    environment:
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
+      COMMS_ROOT_KEY_FILE: /run/secrets/unison_comms_root
+      GMAIL_USERNAME: ""
+      GMAIL_APP_PASSWORD: ""
+    secrets: [unison_comms_root]
 
   inference:
     networks: [internal]
@@ -60,23 +81,51 @@ services:
   auth:
     networks: [auth, data]
     security_opt: ["no-new-privileges:true"]
+    volumes:
+      - unison_data:/var/lib/unison
+    environment:
+      UNISON_AUTH_KEYS_DIR: /var/lib/unison/auth/keys
+      UNISON_AUTH_IDENTITY_DATABASE_PATH: /var/lib/unison/auth/identity.db
+      UNISON_AUTH_BOOTSTRAP_TOKEN_FILE: /run/secrets/unison_bootstrap_token
+      AUTH_JWT_SECRET: ""
+      UNISON_JWT_SECRET: ""
+      UNISON_ORCHESTRATOR_SERVICE_SECRET: ""
+      UNISON_INFERENCE_SERVICE_SECRET: ""
+      UNISON_POLICY_SERVICE_SECRET: ""
+      UNISON_CONTEXT_SERVICE_SECRET: ""
+      UNISON_STORAGE_SERVICE_SECRET: ""
+    secrets: [unison_bootstrap_token]
 
   consent:
-    networks: [auth, data]
+    networks: [auth, data, internal]
     security_opt: ["no-new-privileges:true"]
+    environment:
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
 
   policy:
-    networks: [internal]
+    networks: [internal, auth]
     security_opt: ["no-new-privileges:true"]
+    environment:
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
 
   # Data plane.
   context:
-    networks: [internal, data]
+    networks: [internal, data, auth]
     security_opt: ["no-new-privileges:true"]
+    environment:
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
+      UNISON_CONTEXT_PROFILE_KEY_FILE: /run/secrets/unison_context_root
+      UNISON_REQUIRE_CONSENT: "true"
+      UNISON_CONSENT_SERVICE_URL: http://consent:7072
+    secrets: [unison_context_root]
 
   storage:
-    networks: [internal, data]
+    networks: [internal, data, auth]
     security_opt: ["no-new-privileges:true"]
+    environment:
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
+      STORAGE_OBJECT_ENC_KEY_FILE: /run/secrets/unison_storage_root
+    secrets: [unison_storage_root]
 
   postgres:
     networks: [data]
@@ -103,7 +152,17 @@ services:
     networks: [internal]
 
   payments:
-    networks: [internal]
+    networks: [internal, auth]
+    environment:
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
+      UNISON_AUTH_SECRET: ""
+
+  capability:
+    networks: [internal, auth]
+    environment:
+      UNISON_CAPABILITY_AUTH_MODE: unison_jwt
+      UNISON_CAPABILITY_BEARER_TOKEN: ""
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
 
 networks:
   public: {}
@@ -113,3 +172,13 @@ networks:
     internal: true
   auth:
     internal: true
+
+secrets:
+  unison_bootstrap_token:
+    file: ${UNISON_SECRET_DIR:-.secrets}/bootstrap-token
+  unison_comms_root:
+    file: ${UNISON_SECRET_DIR:-.secrets}/comms-root
+  unison_context_root:
+    file: ${UNISON_SECRET_DIR:-.secrets}/context-root
+  unison_storage_root:
+    file: ${UNISON_SECRET_DIR:-.secrets}/storage-root
