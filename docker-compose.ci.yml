@@ -1,4 +1,16 @@
 services:
+  orchestrator:
+    environment:
+      UNISON_PRINCIPAL_BINDING_TEST_BYPASS: "true"
   context:
+    environment:
+      UNISON_PRINCIPAL_BINDING_TEST_BYPASS: "true"
+  policy:
+    environment:
+      UNISON_PRINCIPAL_BINDING_TEST_BYPASS: "true"
+  actuation:
+    environment:
+      UNISON_PRINCIPAL_BINDING_TEST_BYPASS: "true"
+  comms:
     environment:
       UNISON_PRINCIPAL_BINDING_TEST_BYPASS: "true"
