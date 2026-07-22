@@ -46,7 +46,12 @@ jobs:
             unison-storage
           )
           for repository in "${repositories[@]}"; do
+            branch_args=()
+            if [ "$repository" = "unison-context-graph" ]; then
+              branch_args=(--branch main)
+            fi
             git clone --depth 1 \
+              "${branch_args[@]}" \
               "https://github.com/project-unisonOS/${repository}.git" \
               "${GITHUB_WORKSPACE}/${repository}"
           done
