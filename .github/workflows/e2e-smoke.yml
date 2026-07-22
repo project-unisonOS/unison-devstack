@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  packages: read
 
 jobs:
   e2e:
@@ -71,15 +70,13 @@ jobs:
           cp -R "${GITHUB_WORKSPACE}/unison-orchestrator/schemas/phase1" \
             "${GITHUB_WORKSPACE}/schemas/phase1"
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
-
-      - name: Log in to GHCR
-        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build shared wheel image locally
+        working-directory: unison-workspace/devstack
+        run: |
+          docker build \
+            --file ../../unison-common/Dockerfile.wheel \
+            --tag ghcr.io/project-unisonos/unison-common-wheel:latest \
+            ../../unison-common
 
       - name: Build and start devstack
         working-directory: unison-workspace/devstack
