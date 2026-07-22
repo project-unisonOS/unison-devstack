@@ -50,7 +50,7 @@ jobs:
           )
           for repository in "${repositories[@]}"; do
             branch_args=()
-            if [ "$repository" = "unison-context-graph" ]; then
+            if [ "$repository" = "unison-context-graph" ] || [ "$repository" = "unison-consent" ]; then
               branch_args=(--branch main)
             fi
             git clone --depth 1 \
