@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      COMPOSE_FILE: docker-compose.yml:docker-compose.ports.yml
+      COMPOSE_FILE: docker-compose.yml:docker-compose.ports.yml:docker-compose.ci.yml
     steps:
       - name: Checkout devstack in workspace topology
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -101,6 +101,7 @@ jobs:
           UNISON_IOCORE_URL: http://localhost:8085
           UNISON_POLICY_URL: http://localhost:8083
           UNISON_PERSON_ID: local-user
+          UNISON_CONTEXT_TEST_ROLE: user
         run: |
           python3 scripts/e2e_smoke.py
 

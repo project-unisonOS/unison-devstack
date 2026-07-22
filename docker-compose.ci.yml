@@ -1,0 +1,4 @@
+services:
+  context:
+    environment:
+      UNISON_PRINCIPAL_BINDING_TEST_BYPASS: "true"
