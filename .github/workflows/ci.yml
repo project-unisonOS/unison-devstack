@@ -11,3 +11,4 @@ jobs:
     with:
       python-version: "3.11"
       working-directory: "."
+      pytest-targets: "tests/test_no_sqlite_prod.py"
