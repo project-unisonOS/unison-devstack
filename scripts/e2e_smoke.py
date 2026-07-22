@@ -16,6 +16,7 @@ ACT = os.getenv("UNISON_ACTUATION_URL", "http://localhost:8096")
 PERSON_ID = os.getenv("UNISON_PERSON_ID", "local-user")
 COMMS = os.getenv("UNISON_COMMS_URL", "http://localhost:8087")
 UNISON_BEARER_TOKEN = os.getenv("UNISON_BEARER_TOKEN", "")
+CONTEXT_TEST_ROLE = os.getenv("UNISON_CONTEXT_TEST_ROLE", "")
 GMAIL_BOOTSTRAP_USERNAME = os.getenv("UNISON_TEST_GMAIL_USERNAME", "")
 GMAIL_BOOTSTRAP_APP_PASSWORD = os.getenv("UNISON_TEST_GMAIL_APP_PASSWORD", "")
 
@@ -24,6 +25,8 @@ def _headers(url: str) -> Dict[str, str]:
     headers: Dict[str, str] = {}
     if UNISON_BEARER_TOKEN and (url.startswith(ORCH) or url.startswith(COMMS)):
         headers["Authorization"] = f"Bearer {UNISON_BEARER_TOKEN}"
+    if CONTEXT_TEST_ROLE and url.startswith(CTX):
+        headers["x-test-role"] = CONTEXT_TEST_ROLE
     return headers
 
 
