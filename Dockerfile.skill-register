@@ -1,4 +1,4 @@
-FROM python:3.12-slim@sha256:fdab368dc2e04fab3180d04508b41732756cc442586f708021560ee1341f3d29
+FROM python:3.14-slim@sha256:cea0e6040540fb2b965b6e7fb5ffa00871e632eef63719f0ea54bca189ce14a6
 WORKDIR /app
 COPY scripts/register_skills.py .
 RUN pip install requests==2.32.3
