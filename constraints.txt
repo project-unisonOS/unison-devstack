@@ -7,6 +7,6 @@ opentelemetry-propagator-b3==1.44.0
 opentelemetry-propagator-jaeger==1.44.0
 opentelemetry-semantic-conventions==0.65b0
 opentelemetry-instrumentation==0.65b0
-protobuf==6.33.2
-grpcio==1.76.0
-googleapis-common-protos==1.72.0
+protobuf==6.33.6
+grpcio==1.83.0
+googleapis-common-protos==1.75.1
